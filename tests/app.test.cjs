@@ -52,6 +52,18 @@ test('selecting topic opens learning and learning buttons launch each game',()=>
   app.el('back-home').trigger('click'); app.button('nav','vocabulary').trigger('click'); app.button('learnPlay','type').trigger('click');
   assert.equal(app.context.testGame.state.mode,'type');
 });
+test('vocabulary navigation hides game toolbar mode, topic selection enables it',()=>{
+  const app=boot();
+  app.button('topic','fruit').trigger('click');
+  assert.equal(app.context.document.body.classList.contains('learning-for-game'),true);
+  app.button('nav','vocabulary').trigger('click');
+  assert.equal(app.context.document.body.classList.contains('learning-for-game'),false);
+  app.button('vocabTopic','animals').trigger('click');
+  assert.equal(app.context.document.body.classList.contains('learning-for-game'),false);
+  app.button('nav','review').trigger('click');
+  assert.equal(app.context.document.body.classList.contains('review-mode'),true);
+  assert.equal(app.el('review-empty').classList.contains('hidden'),false);
+});
 test('catch mistake persists across reload and can be reviewed to completion',()=>{
   const app=boot(); app.button('topic','animals').trigger('click'); app.button('learnPlay','catch').trigger('click');
   const word=app.context.testGame.state.current.word;

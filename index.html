@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#f4faff">
   <title>Vui học tiếng Anh</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="review-garden.css">
 </head>
 <body>
   <div class="app-shell">
@@ -112,20 +113,24 @@
       </section>
 
       <section class="screen review-screen hidden" id="review-screen" aria-labelledby="review-heading">
-        <button class="secondary-button" type="button" data-nav="home">← Trang chủ</button>
-        <h1 id="review-heading">📒 Từ cần ôn của bé</h1>
-        <p>Từ trả lời sai được lưu tự động trên trình duyệt này, kể cả khi bé đóng trang.</p>
+        <header class="review-top"><button type="button" data-nav="home">🏡 Trang chủ</button><div class="review-title"><span>KHU VƯỜN NHỎ CỦA BÉ</span><h1 id="review-heading">Ôn từ <em>thật vui!</em></h1></div><div class="review-star">⭐ <span id="review-star-count">0</span> từ đã ôn</div></header>
+        <div class="review-layout">
+        <aside class="review-companion"><div class="review-speech"><strong>Cùng mình ôn nhé!</strong><p>Mỗi từ nhớ thêm là một bông hoa nhỏ trong khu vườn của bé.</p><span aria-hidden="true">🌼 🌷 🌼</span></div><img class="review-friend" src="assets/wordland/vocab-girl.png" alt="Bạn nhỏ cùng bé đọc sách"><img class="review-pet" src="assets/wordland/vocab-cat.png" alt=""></aside>
+        <div class="review-book"><div class="review-book-top"><div><span class="review-eyebrow">CUỐN SỔ TỪ VỰNG</span><h2>Những từ bé đang luyện</h2></div><span class="review-book-icon" aria-hidden="true">📖</span></div>
         <p id="review-summary" role="status"></p>
-        <button id="review-start" type="button">Ôn các từ còn sai</button>
-        <button type="button" data-nav="vocabulary">📖 Học từ mới</button>
+        <div class="review-progress-track" role="progressbar" aria-label="Tiến độ ôn từ" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="review-progress"><div id="review-progress-fill"></div></div>
+        <div class="review-book-actions"><button id="review-start" class="review-primary" type="button">▶ Cùng ôn từ nào!</button><button type="button" data-nav="vocabulary">🌱 Học từ mới</button></div>
+        <div class="review-empty hidden" id="review-empty"><span aria-hidden="true">🌻</span><h3>Khu vườn đang chờ bé!</h3><p>Học và chơi một chút nhé. Những từ cần luyện thêm sẽ xuất hiện ở đây.</p><button type="button" data-nav="vocabulary">📖 Đi học từ nào!</button></div>
         <div id="review-quiz" class="review-quiz hidden">
-          <h2 id="review-prompt"></h2><p>Gõ từ tiếng Anh tương ứng nhé!</p>
+          <span class="review-eyebrow" id="review-quiz-topic"></span><div class="review-illustration" id="review-illustration" aria-hidden="true"></div><h2 id="review-prompt"></h2><p>Bé nhớ từ này trong tiếng Anh không?</p>
           <button id="review-listen" type="button">🔊 Nghe gợi ý</button>
-          <form id="review-form"><label for="review-answer">Đáp án tiếng Anh</label><input id="review-answer" required autocomplete="off" autocapitalize="none" spellcheck="false"><button id="review-check" type="submit">Kiểm tra</button></form>
+          <form id="review-form"><label for="review-answer">Gõ từ tiếng Anh vào đây nhé</label><div class="review-answer-row"><input id="review-answer" placeholder="Bé gõ ở đây…" required autocomplete="off" autocapitalize="none" spellcheck="false"><button class="review-primary" id="review-check" type="submit">✓ Kiểm tra</button></div></form>
           <p id="review-feedback" role="status" aria-live="polite"></p>
           <button id="review-next" type="button" class="hidden">Ôn từ tiếp theo →</button><button id="review-back-list" type="button">Xem danh sách</button>
         </div>
         <ul id="review-list" class="review-list"></ul>
+        <p class="review-save-note">🌼 Cứ từ từ nhé, mỗi lần thử là một lần bé giỏi hơn!</p></div>
+        </div><div class="review-garden-footer" aria-hidden="true">✦ Học một chút · Nhớ thật lâu · Vui mỗi ngày ✦</div>
       </section>
       <section class="screen play-screen hidden" id="play-screen">
         <div class="play-top"><button class="back-button" id="back-home" type="button">← <span>Về trang chủ</span></button><div class="play-title"><span class="play-mode-icon" id="play-mode-icon">🧺</span><img class="game-title-art" src="assets/wordland/game1-title.png" alt="Game 1: Hứng chữ cái rơi"><div class="game-title-copy"><span class="eyebrow" id="play-eyebrow">TRÒ CHƠI 01</span><h2 id="play-title">Hứng chữ cái</h2></div></div><div class="play-stats"><span class="stat-score">⭐ <span>Điểm:</span> <b id="score-value">0</b></span><span class="stat-lives" id="lives-value" aria-label="3 lượt chơi"><img src="assets/wordland/game1-lives.png" alt=""><span id="life-icons">❤️❤️❤️</span></span><button class="game-pause" id="game-pause" type="button" aria-label="Tạm dừng trò chơi">Ⅱ</button></div></div>

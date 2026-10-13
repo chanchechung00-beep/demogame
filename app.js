@@ -28,7 +28,7 @@
     $('progress-fill').style.width = `${percent}%`;
     $('progress-count').textContent = `${percent}%`;
   };
-  const showScreen = screen => { for (const id of ['home-screen', 'play-screen', 'result-screen', 'vocab-screen', 'review-screen']) $(id).classList.toggle('hidden', id !== screen); document.body.classList.toggle('home-mode', screen === 'home-screen'); document.body.classList.toggle('vocabulary-mode', screen === 'vocab-screen'); };
+  const showScreen = screen => { for (const id of ['home-screen', 'play-screen', 'result-screen', 'vocab-screen', 'review-screen']) $(id).classList.toggle('hidden', id !== screen); document.body.classList.toggle('home-mode', screen === 'home-screen'); document.body.classList.toggle('vocabulary-mode', screen === 'vocab-screen'); document.body.classList.toggle('review-mode', screen === 'review-screen'); };
   const renderFlashcard = () => {
     const words = activeWords(); state.vocabIndex %= words.length; const learnedCount = words.filter(isLearned).length; const entry = words[state.vocabIndex];
     $('vocab-emoji').textContent = entry.emoji; $('vocab-back-emoji').textContent = entry.emoji;
@@ -49,8 +49,9 @@
     state.reviewWords = review.record(state.reviewWords, state.selectedTopic, entry.word);
     save(); updateHome();
   };
-  const openLearning = () => {
+  const openLearning = (forGame = false) => {
     backHome();
+    document.body.classList.toggle('learning-for-game', forGame);
     if (!state.selectedTopic) state.selectedTopic = 'animals';
     state.vocabIndex = 0; state.cardFlipped = false;
     renderFlashcard(); showScreen('vocab-screen');
@@ -58,15 +59,25 @@
   const renderReview = () => {
     const all = review.entries(state.reviewWords);
     const pending = all.filter(entry => !entry.resolved);
-    $('review-summary').textContent = pending.length ? `Còn ${pending.length} từ cần ôn · ${all.length - pending.length} từ đã ôn đúng` : 'Chưa có từ cần ôn. Bé có thể học từ mới hoặc chơi tiếp!';
+    const complete = all.length - pending.length;
+    const percent = all.length ? Math.round(complete / all.length * 100) : 0;
+    $('review-summary').textContent = pending.length ? `Cùng chăm sóc ${pending.length} từ nhé! Bé đã ôn đúng ${complete} / ${all.length} từ.` : all.length ? 'Tuyệt vời! Bé đã ôn đúng hết rồi. Cùng học thêm từ mới nhé!' : 'Mỗi từ mới là một hạt mầm bé xinh.';
+    $('review-star-count').textContent = complete;
+    $('review-progress-fill').style.width = `${percent}%`;
+    $('review-progress').setAttribute('aria-valuenow', String(percent));
+    $('review-empty').classList.toggle('hidden', all.length > 0);
     $('review-list').replaceChildren();
     for (const entry of all.sort((a,b) => Number(a.resolved) - Number(b.resolved))) {
       const card = document.createElement('li');
-      const title = document.createElement('strong'); title.textContent = `${entry.emoji} ${entry.word} — ${entry.meaning}`;
-      const detail = document.createElement('small'); detail.textContent = `${topicLabels[entry.topic]} · Sai ${entry.mistakes} lần · ${entry.resolved ? 'Đã ôn đúng ✓' : 'Cần ôn'}`;
+      card.className = `review-word-card${entry.resolved ? ' is-resolved' : ''}`;
+      const picture = document.createElement('span'); picture.className = 'review-word-picture'; picture.textContent = entry.emoji; picture.setAttribute('aria-hidden', 'true');
+      const title = document.createElement('strong'); title.textContent = entry.word;
+      const meaning = document.createElement('span'); meaning.className = 'review-word-meaning'; meaning.textContent = entry.meaning;
+      const detail = document.createElement('small'); detail.textContent = `${topicLabels[entry.topic]} · ${entry.resolved ? 'Đã ôn đúng ✓' : 'Cùng luyện thêm nhé'}`;
       const listen = document.createElement('button'); listen.type = 'button'; listen.textContent = '🔊 Nghe'; listen.setAttribute('aria-label', `Nghe từ ${entry.word}`); listen.addEventListener('click', () => speak(entry.word));
       const practice = document.createElement('button'); practice.type = 'button'; practice.textContent = 'Ôn từ này'; practice.addEventListener('click', () => beginReview(entry));
-      card.append(title, detail, listen, practice); $('review-list').append(card);
+      const actions = document.createElement('div'); actions.className = 'review-card-actions'; actions.append(listen, practice);
+      card.append(picture, title, meaning, detail, actions); $('review-list').append(card);
     }
     $('review-start').disabled = !pending.length;
   };
@@ -74,7 +85,10 @@
     state.reviewEntry = entry || review.entries(state.reviewWords).find(word => !word.resolved);
     if (!state.reviewEntry) { $('review-quiz').classList.add('hidden'); renderReview(); return; }
     $('review-list').classList.add('hidden'); $('review-quiz').classList.remove('hidden');
-    $('review-prompt').textContent = `${state.reviewEntry.emoji} ${state.reviewEntry.meaning} (${topicLabels[state.reviewEntry.topic]})`;
+    $('review-illustration').textContent = state.reviewEntry.emoji;
+    $('review-quiz-topic').textContent = topicLabels[state.reviewEntry.topic];
+    $('review-prompt').textContent = state.reviewEntry.meaning;
+    $('review-quiz').classList.remove('is-correct');
     $('review-answer').value = ''; $('review-answer').disabled = false; $('review-check').disabled = false;
     $('review-feedback').textContent = ''; $('review-next').classList.add('hidden'); $('review-answer').focus();
   };
@@ -331,7 +345,7 @@
     state.vocabIndex = 0; state.cardFlipped = false; renderFlashcard(); updateHome();
     document.querySelectorAll('[data-topic]').forEach(topic => { const selected = topic === button; topic.setAttribute('aria-pressed', String(selected)); topic.classList.toggle('topic-active', selected); });
     $('wordland-games').classList.remove('hidden');
-    openLearning();
+    openLearning(true);
   }));
   const finishTopicBoardOpen = () => {
     const board = $('topic-board');
@@ -366,7 +380,7 @@
   $('settings-dialog').addEventListener('click', event => { if (event.target === $('settings-dialog')) $('settings-dialog').close(); });
   $('settings-sound').addEventListener('click', () => toggleSound());
   $('game-pause').addEventListener('click', togglePause); $('space-pause').addEventListener('click', togglePause); $('resume-game').addEventListener('click', togglePause);
-  document.querySelectorAll('[data-start]').forEach(button => button.addEventListener('click', () => openLearning()));
+  document.querySelectorAll('[data-start]').forEach(button => button.addEventListener('click', () => openLearning(true)));
   $('back-home').addEventListener('click', backHome); $('result-home').addEventListener('click', backHome); $('space-exit').addEventListener('click', backHome);
   $('play-again').addEventListener('click', () => startGame(state.mode)); $('space-result-replay').addEventListener('click', () => startGame(state.mode)); $('space-result-home').addEventListener('click', backHome); $('garden-result-replay').addEventListener('click', () => startGame(state.mode)); $('garden-result-home').addEventListener('click', backHome); $('skip-word').addEventListener('click', () => { if (!state.running || state.mode !== 'catch') return; rememberMistake(state.current); cancelAnimationFrame(state.raf); state.running = false; state.round++; setupRound(); if (state.round < state.order.length) startLoop(); else finishGame(); });
   $('move-left').addEventListener('pointerdown', () => movePlayer(-1)); $('move-right').addEventListener('pointerdown', () => movePlayer(1));
@@ -385,7 +399,7 @@
     const correct = core.matchesWord($('review-answer').value, entry.word);
     state.reviewWords = review.answer(state.reviewWords, entry.topic, entry.word, $('review-answer').value); save(); updateHome();
     $('review-feedback').textContent = correct ? `Đúng rồi! ${entry.word} — ${entry.meaning}. Đã đánh dấu ôn đúng.` : `Chưa đúng. Đáp án là “${entry.word}”. Bé gõ lại nhé!`;
-    if (correct) { $('review-answer').disabled = true; $('review-check').disabled = true; $('review-next').classList.remove('hidden'); $('review-next').focus(); }
+    if (correct) { renderReview(); $('review-quiz').classList.add('is-correct'); $('review-answer').disabled = true; $('review-check').disabled = true; $('review-next').classList.remove('hidden'); $('review-next').focus(); }
     else { $('review-answer').select(); }
   });
   const toggleSound = () => { state.sound = !state.sound; $('space-sound-icon').textContent = state.sound ? '🔊' : '🔇'; $('space-sound-toggle').setAttribute('aria-pressed', String(state.sound)); $('settings-sound-icon').textContent = state.sound ? '🔊' : '🔇'; $('settings-sound').setAttribute('aria-pressed', String(state.sound)); save(); if (state.mode === 'type' && state.running) $('word-input').focus(); };
