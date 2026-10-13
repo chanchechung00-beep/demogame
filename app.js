@@ -1,5 +1,6 @@
 (() => {
   const core = window.GameCore;
+  const review = window.ReviewCore;
   const $ = id => document.getElementById(id);
   const state = { mode: 'catch', score: 0, lives: 3, round: 0, order: [], current: null, collected: [], typedBuffer: '', typedCount: 0, items: [], playerX: 50, running: false, sound: true, learned: new Set(), timer: null, raf: null, lastSpawn: 0, lastFrame: 0, completedWords: [], vocabIndex: 0, cardFlipped: false, paused: false, selectedTopic: null };
   const activeWords = () => core.getWords(state.selectedTopic);
@@ -14,16 +15,20 @@
   state.highScore = Number(currentSaved?.highScore) || 0;
   state.learned = new Set(Array.isArray(saved.learned) ? saved.learned : []);
   state.sound = saved.sound !== false;
-  const save = () => { try { localStorage.setItem(storageKey, JSON.stringify({ highScore: state.highScore, learned: [...state.learned], sound: state.sound })); } catch {} };
+  state.reviewWords = review.restore(saved.reviewWords);
+  state.reviewEntry = null;
+  const save = () => { try { localStorage.setItem(storageKey, JSON.stringify({ highScore: state.highScore, learned: [...state.learned], sound: state.sound, reviewWords: state.reviewWords })); $('storage-notice').classList.add('hidden'); } catch { $('storage-notice').classList.remove('hidden'); } };
   const updateHome = () => {
     $('home-star-points').textContent = state.highScore;
+    const pending = review.entries(state.reviewWords).filter(entry => !entry.resolved).length;
+    document.querySelectorAll('[data-review-count]').forEach(label => { label.textContent = pending; });
     const words = activeWords(); const learnedCount = words.filter(isLearned).length;
     $('words-learned').textContent = `Bé đã gặp ${learnedCount}/${words.length} từ`;
     const percent = Math.round(learnedCount / words.length * 100);
     $('progress-fill').style.width = `${percent}%`;
     $('progress-count').textContent = `${percent}%`;
   };
-  const showScreen = screen => { for (const id of ['home-screen', 'play-screen', 'result-screen', 'vocab-screen']) $(id).classList.toggle('hidden', id !== screen); document.body.classList.toggle('home-mode', screen === 'home-screen'); document.body.classList.toggle('vocabulary-mode', screen === 'vocab-screen'); };
+  const showScreen = screen => { for (const id of ['home-screen', 'play-screen', 'result-screen', 'vocab-screen', 'review-screen']) $(id).classList.toggle('hidden', id !== screen); document.body.classList.toggle('home-mode', screen === 'home-screen'); document.body.classList.toggle('vocabulary-mode', screen === 'vocab-screen'); };
   const renderFlashcard = () => {
     const words = activeWords(); state.vocabIndex %= words.length; const learnedCount = words.filter(isLearned).length; const entry = words[state.vocabIndex];
     $('vocab-emoji').textContent = entry.emoji; $('vocab-back-emoji').textContent = entry.emoji;
@@ -38,6 +43,44 @@
     $('vocab-learned-count').textContent = `${learnedCount} / ${words.length} từ đã gặp`;
     $('vocab-progress-fill').style.width = `${Math.round(learnedCount / words.length * 100)}%`;
     $('flashcard').classList.toggle('flipped', state.cardFlipped); $('flashcard').setAttribute('aria-pressed', String(state.cardFlipped));
+  };
+  const rememberMistake = entry => {
+    if (!entry) return;
+    state.reviewWords = review.record(state.reviewWords, state.selectedTopic, entry.word);
+    save(); updateHome();
+  };
+  const openLearning = () => {
+    backHome();
+    if (!state.selectedTopic) state.selectedTopic = 'animals';
+    state.vocabIndex = 0; state.cardFlipped = false;
+    renderFlashcard(); showScreen('vocab-screen');
+  };
+  const renderReview = () => {
+    const all = review.entries(state.reviewWords);
+    const pending = all.filter(entry => !entry.resolved);
+    $('review-summary').textContent = pending.length ? `Còn ${pending.length} từ cần ôn · ${all.length - pending.length} từ đã ôn đúng` : 'Chưa có từ cần ôn. Bé có thể học từ mới hoặc chơi tiếp!';
+    $('review-list').replaceChildren();
+    for (const entry of all.sort((a,b) => Number(a.resolved) - Number(b.resolved))) {
+      const card = document.createElement('li');
+      const title = document.createElement('strong'); title.textContent = `${entry.emoji} ${entry.word} — ${entry.meaning}`;
+      const detail = document.createElement('small'); detail.textContent = `${topicLabels[entry.topic]} · Sai ${entry.mistakes} lần · ${entry.resolved ? 'Đã ôn đúng ✓' : 'Cần ôn'}`;
+      const listen = document.createElement('button'); listen.type = 'button'; listen.textContent = '🔊 Nghe'; listen.setAttribute('aria-label', `Nghe từ ${entry.word}`); listen.addEventListener('click', () => speak(entry.word));
+      const practice = document.createElement('button'); practice.type = 'button'; practice.textContent = 'Ôn từ này'; practice.addEventListener('click', () => beginReview(entry));
+      card.append(title, detail, listen, practice); $('review-list').append(card);
+    }
+    $('review-start').disabled = !pending.length;
+  };
+  const beginReview = entry => {
+    state.reviewEntry = entry || review.entries(state.reviewWords).find(word => !word.resolved);
+    if (!state.reviewEntry) { $('review-quiz').classList.add('hidden'); renderReview(); return; }
+    $('review-list').classList.add('hidden'); $('review-quiz').classList.remove('hidden');
+    $('review-prompt').textContent = `${state.reviewEntry.emoji} ${state.reviewEntry.meaning} (${topicLabels[state.reviewEntry.topic]})`;
+    $('review-answer').value = ''; $('review-answer').disabled = false; $('review-check').disabled = false;
+    $('review-feedback').textContent = ''; $('review-next').classList.add('hidden'); $('review-answer').focus();
+  };
+  const openReview = () => {
+    backHome(); state.reviewEntry = null; $('review-quiz').classList.add('hidden'); $('review-list').classList.remove('hidden');
+    renderReview(); showScreen('review-screen');
   };
   const flipFlashcard = () => { state.cardFlipped = !state.cardFlipped; renderFlashcard(); };
   const nextFlashcard = known => {
@@ -148,6 +191,7 @@
       state.collected = result.collected; state.score += 10; renderSlots(); setFeedback('Đúng chữ rồi! Cố hứng chữ tiếp theo nhé! ✨', 'success');
       if (result.complete) completeWord();
     } else {
+      rememberMistake(state.current);
       loseLife(`Hứng nhầm rồi! Cần chữ ${result.expected}. Mất một tim nhé!`);
     }
     updateStats();
@@ -196,16 +240,17 @@
     if (timestamp - state.lastSpawn > spawnInterval) { spawnItem(); state.lastSpawn = timestamp; }
     const field = $('playfield'); const catcherRect = state.mode === 'catch' ? $('basket-player').getBoundingClientRect() : null;
     state.items = state.items.filter(item => {
+      if (!state.running) { item.el.remove(); return false; }
       item.y += item.speed * delta; item.el.style.top = `${item.y}px`;
       if (state.mode === 'catch') {
         const appleRect = item.el.getBoundingClientRect();
         const touchesCatcher = appleRect.right >= catcherRect.left && appleRect.left <= catcherRect.right && appleRect.bottom >= catcherRect.top && appleRect.top <= catcherRect.bottom;
         if (touchesCatcher) { item.el.remove(); collect(item); return false; }
       }
-      if (item.y > field.clientHeight - 40) { item.el.remove(); if (state.mode === 'type') loseLife(); return false; }
+      if (item.y > field.clientHeight - 40) { item.el.remove(); if (state.mode === 'type') { rememberMistake(activeWords().find(entry => entry.word === item.text)); loseLife(); } return false; }
       return true;
     });
-    state.raf = requestAnimationFrame(frame);
+    if (state.running) state.raf = requestAnimationFrame(frame);
   };
   const startLoop = () => { if (state.lives <= 0 || state.round >= state.order.length) return finishGame(); state.running = true; state.lastFrame = 0; state.raf = requestAnimationFrame(frame); };
   const startGame = mode => {
@@ -238,6 +283,8 @@
     }
     const candidates = state.items.filter(item => core.isTypingPrefix(input, item.text));
     if (!candidates.length) {
+      const target = review.typingTarget(state.items, state.typedBuffer);
+      rememberMistake(activeWords().find(entry => entry.word === target));
       $('word-input').value = ''; state.typedBuffer = ''; state.typedCount = 0;
       state.items.forEach(item => { item.el.textContent = item.text; item.el.classList.remove('target-word'); });
       setFeedback('Chữ cái này chưa khớp với từ nào đang rơi. Thử lại nhé!', 'gentle'); return;
@@ -267,9 +314,10 @@
   const backHome = () => { document.body.classList.remove('space-result', 'garden-result'); state.running = false; state.paused = false; $('pause-overlay').classList.add('hidden'); clearTimeout(state.timer); cancelAnimationFrame(state.raf); document.body.classList.remove('space-mode', 'orchard-mode'); $('game-panel').classList.remove('space-game', 'catch-game'); $('space-hud').classList.add('hidden'); showScreen('home-screen'); document.querySelectorAll('.nav-item').forEach(item => item.classList.toggle('active', item.dataset.nav === 'home')); updateHome(); };
   const openSettings = () => { if (!$('settings-dialog').open) $('settings-dialog').showModal(); };
   const navigate = destination => {
+    if (destination === 'review') { openReview(); return; }
+    if (destination === 'vocabulary') { openLearning(); return; }
     if (destination === 'settings') { openSettings(); return; }
-    if (destination === 'vocabulary') { if (!state.selectedTopic) { state.selectedTopic = 'fruit'; state.vocabIndex = 1; } state.cardFlipped = false; renderFlashcard(); showScreen('vocab-screen'); }
-    else { showScreen('home-screen'); if (destination === 'games') { if (state.selectedTopic) $('wordland-games').classList.remove('hidden'); else $('topic-board').classList.add('attention-pulse'); } else if (destination === 'achievements') $('word-progress').classList.add('attention-pulse'); window.setTimeout(() => document.querySelectorAll('.attention-pulse').forEach(item => item.classList.remove('attention-pulse')), 1200); }
+    { backHome(); if (destination === 'games') { if (state.selectedTopic) $('wordland-games').classList.remove('hidden'); else $('topic-board').classList.add('attention-pulse'); } else if (destination === 'achievements') $('word-progress').classList.add('attention-pulse'); window.setTimeout(() => document.querySelectorAll('.attention-pulse').forEach(item => item.classList.remove('attention-pulse')), 1200); }
     document.querySelectorAll('.nav-item').forEach(item => item.classList.toggle('active', item.dataset.nav === destination));
   };
   const togglePause = () => {
@@ -283,6 +331,7 @@
     state.vocabIndex = 0; state.cardFlipped = false; renderFlashcard(); updateHome();
     document.querySelectorAll('[data-topic]').forEach(topic => { const selected = topic === button; topic.setAttribute('aria-pressed', String(selected)); topic.classList.toggle('topic-active', selected); });
     $('wordland-games').classList.remove('hidden');
+    openLearning();
   }));
   const finishTopicBoardOpen = () => {
     const board = $('topic-board');
@@ -317,14 +366,28 @@
   $('settings-dialog').addEventListener('click', event => { if (event.target === $('settings-dialog')) $('settings-dialog').close(); });
   $('settings-sound').addEventListener('click', () => toggleSound());
   $('game-pause').addEventListener('click', togglePause); $('space-pause').addEventListener('click', togglePause); $('resume-game').addEventListener('click', togglePause);
-  document.querySelectorAll('[data-start]').forEach(button => button.addEventListener('click', () => startGame(button.dataset.start)));
+  document.querySelectorAll('[data-start]').forEach(button => button.addEventListener('click', () => openLearning()));
   $('back-home').addEventListener('click', backHome); $('result-home').addEventListener('click', backHome); $('space-exit').addEventListener('click', backHome);
-  $('play-again').addEventListener('click', () => startGame(state.mode)); $('space-result-replay').addEventListener('click', () => startGame(state.mode)); $('space-result-home').addEventListener('click', backHome); $('garden-result-replay').addEventListener('click', () => startGame(state.mode)); $('garden-result-home').addEventListener('click', backHome); $('skip-word').addEventListener('click', () => { if (!state.running) return; state.round++; setupRound(); if (state.round < state.order.length) startLoop(); else finishGame(); });
+  $('play-again').addEventListener('click', () => startGame(state.mode)); $('space-result-replay').addEventListener('click', () => startGame(state.mode)); $('space-result-home').addEventListener('click', backHome); $('garden-result-replay').addEventListener('click', () => startGame(state.mode)); $('garden-result-home').addEventListener('click', backHome); $('skip-word').addEventListener('click', () => { if (!state.running || state.mode !== 'catch') return; rememberMistake(state.current); cancelAnimationFrame(state.raf); state.running = false; state.round++; setupRound(); if (state.round < state.order.length) startLoop(); else finishGame(); });
   $('move-left').addEventListener('pointerdown', () => movePlayer(-1)); $('move-right').addEventListener('pointerdown', () => movePlayer(1));
   $('playfield').addEventListener('pointerdown', event => { if (state.mode !== 'catch') return; $('playfield').setPointerCapture?.(event.pointerId); movePlayerToPointer(event); });
   $('playfield').addEventListener('pointermove', event => { if (state.mode === 'catch' && event.buttons) movePlayerToPointer(event); });
   $('word-input').addEventListener('input', handleTypingInput);
-  document.addEventListener('keydown', event => { if (event.key === 'ArrowLeft') { event.preventDefault(); movePlayer(-1); } if (event.key === 'ArrowRight') { event.preventDefault(); movePlayer(1); } });
+  document.addEventListener('keydown', event => { if (!state.running || state.mode !== 'catch') return; if (event.key === 'ArrowLeft') { event.preventDefault(); movePlayer(-1); } if (event.key === 'ArrowRight') { event.preventDefault(); movePlayer(1); } });
+  document.querySelectorAll('[data-learn-play]').forEach(button => button.addEventListener('click', () => startGame(button.dataset.learnPlay)));
+  $('review-start').addEventListener('click', () => beginReview());
+  $('review-back-list').addEventListener('click', () => { state.reviewEntry = null; $('review-quiz').classList.add('hidden'); $('review-list').classList.remove('hidden'); renderReview(); });
+  $('review-next').addEventListener('click', () => { $('review-list').classList.remove('hidden'); beginReview(); });
+  $('review-listen').addEventListener('click', () => { if (state.reviewEntry) speak(state.reviewEntry.word); });
+  $('review-form').addEventListener('submit', event => {
+    event.preventDefault(); const entry = state.reviewEntry;
+    if (!entry || $('review-answer').disabled || !core.normalize($('review-answer').value)) return;
+    const correct = core.matchesWord($('review-answer').value, entry.word);
+    state.reviewWords = review.answer(state.reviewWords, entry.topic, entry.word, $('review-answer').value); save(); updateHome();
+    $('review-feedback').textContent = correct ? `Đúng rồi! ${entry.word} — ${entry.meaning}. Đã đánh dấu ôn đúng.` : `Chưa đúng. Đáp án là “${entry.word}”. Bé gõ lại nhé!`;
+    if (correct) { $('review-answer').disabled = true; $('review-check').disabled = true; $('review-next').classList.remove('hidden'); $('review-next').focus(); }
+    else { $('review-answer').select(); }
+  });
   const toggleSound = () => { state.sound = !state.sound; $('space-sound-icon').textContent = state.sound ? '🔊' : '🔇'; $('space-sound-toggle').setAttribute('aria-pressed', String(state.sound)); $('settings-sound-icon').textContent = state.sound ? '🔊' : '🔇'; $('settings-sound').setAttribute('aria-pressed', String(state.sound)); save(); if (state.mode === 'type' && state.running) $('word-input').focus(); };
   document.addEventListener('pointerdown', event => { if (state.mode === 'type' && state.running && !event.target.closest('button')) $('word-input').focus(); });
   $('space-sound-toggle').addEventListener('click', toggleSound);
