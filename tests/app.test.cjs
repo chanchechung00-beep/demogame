@@ -37,7 +37,7 @@ function boot(storage = new Map(), failWrites = false) {
   context.window=context;
   for (const file of ['game-core.js','review-core.js','app.js']) {
     let source=fs.readFileSync(path.join(__dirname,'..',file),'utf8');
-    if(file==='app.js') source=source.replace(/\}\)\(\);\s*$/, 'window.testGame = {state, collect, frame, handleTypingInput};})();');
+    if(file==='app.js') source=source.replace(/\}\)\(\);\s*$/, 'window.testGame = {state, collect, frame, handleTypingInput, finishGame};})();');
     vm.runInContext(source,context,{filename:file});
   }
   return {context, storage, el:id=>byId.get(id), button:(key,value)=>elements.find(e=>e.dataset[key]===value), element:()=>new Element()};
@@ -46,11 +46,40 @@ test('selecting topic opens learning and learning buttons launch each game',()=>
   const app=boot(); app.button('topic','fruit').trigger('click');
   assert.equal(app.el('vocab-screen').classList.contains('hidden'),false);
   assert.equal(app.el('vocab-word').textContent,'fruit');
+  assert.equal(app.el('chooser-screen').classList.contains('hidden'),true);
+  app.el('choose-games').trigger('click');
+  assert.equal(app.el('chooser-screen').classList.contains('hidden'),false);
+  assert.equal(app.context.testGame.state.selectedTopic,'fruit');
   app.button('learnPlay','catch').trigger('click');
   assert.equal(app.context.testGame.state.mode,'catch');
   assert.equal(app.el('play-screen').classList.contains('hidden'),false);
   app.el('back-home').trigger('click'); app.button('nav','vocabulary').trigger('click'); app.button('learnPlay','type').trigger('click');
   assert.equal(app.context.testGame.state.mode,'type');
+});
+test('practice allows repeated catch mistakes and falling words without losing lives or setting records',()=>{
+  const app=boot(); app.button('nav','practice').trigger('click');
+  assert.equal(app.el('chooser-screen').classList.contains('hidden'),false);
+  app.el('chooser-topic').value='farm'; app.el('chooser-topic').trigger('change');
+  app.button('learnPlay','catch').trigger('click');
+  const state=app.context.testGame.state;
+  assert.equal(state.selectedTopic,'farm');
+  for(let i=0;i<5;i++) app.context.testGame.collect({text:'!'});
+  assert.equal(state.lives,3); assert.equal(state.running,true);
+  assert.equal(app.el('life-icons').textContent,'∞');
+  state.score=999; app.context.testGame.finishGame();
+  assert.equal(state.highScore,0);
+  app.el('garden-result-replay').trigger('click');
+  assert.equal(state.practice,true);
+  app.el('back-home').trigger('click'); app.button('nav','practice').trigger('click'); app.button('learnPlay','type').trigger('click');
+  for(let i=0;i<5;i++) {
+    state.items=[{text:'cow',el:app.element(),y:600,x:20,speed:40}]; state.lastSpawn=100;
+    app.context.testGame.frame(101);
+  }
+  assert.equal(state.lives,3); assert.equal(state.running,true);
+  app.el('space-exit').trigger('click'); app.button('topic','animals').trigger('click'); app.el('choose-games').trigger('click'); app.button('learnPlay','catch').trigger('click');
+  assert.equal(state.practice,false);
+  for(let i=0;i<3;i++) app.context.testGame.collect({text:'!'});
+  assert.equal(state.lives,0); assert.equal(state.running,false);
 });
 test('vocabulary navigation hides game toolbar mode, topic selection enables it',()=>{
   const app=boot();

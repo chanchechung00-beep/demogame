@@ -5,7 +5,8 @@
 ## Học và ôn từ
 
 - Chọn chủ đề để vào màn hình học từ vựng: lật thẻ, nghe phát âm, chuyển thẻ và đánh dấu đã thuộc.
-- Chọn **Chơi hứng chữ** hoặc **Chơi bắn từ** trên màn hình học khi sẵn sàng.
+- Khi chọn chủ đề từ trang chủ, bấm **Bắt đầu chơi** trên bảng gỗ dưới màn hình học, rồi chọn **Hứng chữ cái** hoặc **Bắn từ vựng**. Mục **Từ vựng** độc lập chỉ hiển thị phần học.
+- **Rèn kỹ năng** trên trang chủ mở màn hình chọn chủ đề và trò chơi thử. Cả hai trò đều không mất mạng trong chế độ này; điểm luyện tập không thay đổi kỷ lục. Chơi lại giữ chế độ luyện tập; vào trò chơi thường sẽ trở lại ba mạng.
 - **Từ cần ôn** có trên trang chủ, màn hình học và màn hình kết quả.
 - Hứng sai, bỏ qua từ, gõ sai khi xác định được từ mục tiêu, hoặc để từ rơi xuống trong trò bắn từ sẽ lưu từ cần ôn ngay lập tức.
 - Khi có nhiều từ đang rơi và chưa xác định được từ bé đang gõ, ứng dụng không đoán từ sai. Từ rơi xuống vẫn được lưu.
