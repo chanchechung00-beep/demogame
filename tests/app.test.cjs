@@ -37,7 +37,7 @@ function boot(storage = new Map(), failWrites = false) {
   context.window=context;
   for (const file of ['game-core.js','review-core.js','app.js']) {
     let source=fs.readFileSync(path.join(__dirname,'..',file),'utf8');
-    if(file==='app.js') source=source.replace(/\}\)\(\);\s*$/, 'window.testGame = {state, collect, frame, handleTypingInput, finishGame};})();');
+    if(file==='app.js') source=source.replace(/\}\)\(\);\s*$/, 'window.testGame = {state, collect, frame, handleTypingInput, finishGame, spawnItem};})();');
     vm.runInContext(source,context,{filename:file});
   }
   return {context, storage, el:id=>byId.get(id), button:(key,value)=>elements.find(e=>e.dataset[key]===value), element:()=>new Element()};
@@ -92,6 +92,29 @@ test('vocabulary navigation hides game toolbar mode, topic selection enables it'
   app.button('nav','review').trigger('click');
   assert.equal(app.context.document.body.classList.contains('review-mode'),true);
   assert.equal(app.el('review-empty').classList.contains('hidden'),false);
+});
+test('returning home keeps the topic garden and games only exist in chooser',()=>{
+  const app=boot();
+  assert.equal(app.el('wordland-games'),undefined);
+  app.button('topic','nature').trigger('click'); app.button('nav','home').trigger('click');
+  assert.equal(app.el('home-screen').classList.contains('hidden'),false);
+  assert.equal(app.el('chooser-screen').classList.contains('hidden'),true);
+  assert.equal(app.el('topic-board').classList.contains('has-selection'),false);
+  app.button('topic','farm').trigger('click');
+  assert.equal(app.el('vocab-screen').classList.contains('hidden'),false);
+  assert.equal(app.context.testGame.state.running,false);
+  app.el('choose-games').trigger('click');
+  assert.equal(app.el('chooser-screen').classList.contains('hidden'),false);
+});
+test('falling items stay bounded and resume after an item leaves',()=>{
+  for(const [mode,cap] of [['catch',4],['type',3]]) {
+    const app=boot(); app.button('topic','animals').trigger('click'); app.el('choose-games').trigger('click'); app.button('learnPlay',mode).trigger('click');
+    const game=app.context.testGame;
+    for(let i=0;i<12;i++) game.spawnItem();
+    assert.equal(game.state.items.length,cap);
+    game.state.items.pop(); game.spawnItem();
+    assert.equal(game.state.items.length,cap);
+  }
 });
 test('catch mistake persists across reload and can be reviewed to completion',()=>{
   const app=boot(); app.button('topic','animals').trigger('click'); app.button('learnPlay','catch').trigger('click');

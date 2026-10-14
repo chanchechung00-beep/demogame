@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="review-garden.css">
   <link rel="stylesheet" href="play-garden.css">
+  <link rel="stylesheet" href="home-garden.css">
 </head>
 <body>
   <div class="app-shell">
@@ -32,13 +33,8 @@
           <img class="home-title-sign" src="assets/wordland/home-title.png" alt="Khám phá Thế giới Từ Vựng — Cùng học, cùng chơi, cùng lớn khôn!">
           <div class="home-friends" aria-hidden="true"><img class="friend-child child-one" src="assets/wordland/child-girl.png" alt=""><img class="friend-child child-two" src="assets/wordland/child-boy.png" alt=""><img class="friend-pet pet-one" src="assets/wordland/dog.png" alt=""><img class="friend-pet pet-two" src="assets/wordland/cat.png" alt=""><img class="friend-pet pet-three" src="assets/wordland/rabbit.png" alt=""><img class="friend-bird" src="assets/wordland/chick.png" alt=""></div>
           <button class="review-home-link" type="button" data-nav="review">📒 Từ cần ôn (<span data-review-count>0</span>)</button><div class="home-signposts"><button type="button" data-nav="practice"><i>💡</i><span>Rèn kỹ năng</span></button></div>
-          <div class="section-heading game-section-title" id="games-heading"><span class="sr-only">Chọn một trò chơi</span></div>
-          <div class="game-grid wordland-games hidden" id="wordland-games">
-            <article class="game-card catch-card"><img class="game-card-art" src="assets/wordland/game-catch-card.png" alt="Game 1: Hứng chữ cái rơi — chú sóc đón chữ trong giỏ"><div class="card-body"><h3 class="sr-only">Hứng chữ cái rơi</h3><button class="play-button coral-button" type="button" data-start="catch" aria-label="Bắt đầu chơi game hứng chữ cái rơi"></button></div></article>
-            <article class="game-card type-card"><img class="game-card-art" src="assets/wordland/game-type-card.png" alt="Game 2: Bắn từ vựng — phi hành gia khám phá các từ tiếng Anh"><div class="card-body"><h3 class="sr-only">Bắn từ vựng</h3><button class="play-button violet-button" type="button" data-start="type" aria-label="Bắt đầu chơi game bắn từ vựng"></button></div></article>
-          </div>
           <aside class="topic-board" id="topic-board" aria-label="Chọn chủ đề">
-            <button class="topic-close" id="topic-close" type="button" aria-label="Thu gọn bảng chủ đề" aria-controls="topic-board" aria-expanded="true">×</button><div class="topic-board-title">Chọn chủ đề</div>
+            <div class="topic-board-title">🌼 Hôm nay bé muốn khám phá gì?</div><p class="topic-intro">Chọn một chủ đề · Học từ mới · Sẵn sàng rồi hãy chơi!</p>
             <div class="topic-grid">
               <button class="topic-card" type="button" data-topic="farm" aria-label="Chọn chủ đề Nông trại" aria-pressed="false"><img src="assets/wordland/topic-farm.png" alt=""><span class="sr-only">Nông trại</span></button>
               <button class="topic-card" type="button" data-topic="animals" aria-label="Chọn chủ đề Động vật" aria-pressed="false"><img src="assets/wordland/topic-animals.png" alt=""><span class="sr-only">Động vật</span></button>
@@ -51,7 +47,6 @@
             </div>
             <div class="topic-board-progress" id="word-progress"><span>🏆</span><div><b>Tiến độ của bé</b><small id="words-learned">Bé đã gặp 0/20 từ</small><div class="topic-progress-track"><div id="progress-fill"></div></div></div><strong id="progress-count">0%</strong></div>
           </aside>
-          <button class="topic-open hidden" id="topic-open" type="button" aria-controls="topic-board" aria-expanded="false">🗺️ Chọn chủ đề</button>
           <span class="home-word-count"><b>20</b> từ động vật để khám phá!</span>
         </div>
       </section>

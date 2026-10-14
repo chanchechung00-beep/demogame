@@ -164,6 +164,8 @@
     $('basket-player').style.left = `${state.playerX}%`;
   };
   const spawnItem = () => {
+    const maxItems = state.mode === 'catch' ? 4 : 3;
+    if (state.items.length >= maxItems) return;
     const el = document.createElement('span'); el.className = `falling-item ${state.mode === 'type' ? 'word-item' : ''}`;
     let text;
     if (state.mode === 'type') {
@@ -257,7 +259,7 @@
   const frame = timestamp => {
     if (!state.running) return;
     const delta = Math.min((timestamp - (state.lastFrame || timestamp)) / 1000, .06); state.lastFrame = timestamp;
-    const spawnInterval = state.mode === 'catch' ? Math.max(430, 930 - state.round * 85 - state.collected.length * 16) : 930;
+    const spawnInterval = state.mode === 'catch' ? Math.max(1250, 1700 - state.round * 65 - state.collected.length * 15) : 1900;
     if (timestamp - state.lastSpawn > spawnInterval) { spawnItem(); state.lastSpawn = timestamp; }
     const field = $('playfield'); const catcherRect = state.mode === 'catch' ? $('basket-player').getBoundingClientRect() : null;
     state.items = state.items.filter(item => {
@@ -350,7 +352,7 @@
     if (destination === 'review') { openReview(); return; }
     if (destination === 'vocabulary') { openLearning(); return; }
     if (destination === 'settings') { openSettings(); return; }
-    { backHome(); if (destination === 'games') { if (state.selectedTopic) $('wordland-games').classList.remove('hidden'); else $('topic-board').classList.add('attention-pulse'); } else if (destination === 'achievements') $('word-progress').classList.add('attention-pulse'); window.setTimeout(() => document.querySelectorAll('.attention-pulse').forEach(item => item.classList.remove('attention-pulse')), 1200); }
+    backHome();
     document.querySelectorAll('.nav-item').forEach(item => item.classList.toggle('active', item.dataset.nav === destination));
   };
   const togglePause = () => {
@@ -360,30 +362,12 @@
   document.querySelectorAll('[data-nav]').forEach(button => button.addEventListener('click', () => navigate(button.dataset.nav)));
   document.querySelectorAll('[data-topic]').forEach(button => button.addEventListener('click', () => {
     state.selectedTopic = button.dataset.topic;
-    $('topic-board').classList.add('has-selection'); document.body.classList.add('topic-selected');
+
     state.vocabIndex = 0; state.cardFlipped = false; renderFlashcard(); updateHome();
     document.querySelectorAll('[data-topic]').forEach(topic => { const selected = topic === button; topic.setAttribute('aria-pressed', String(selected)); topic.classList.toggle('topic-active', selected); });
-    $('wordland-games').classList.remove('hidden');
+
     openLearning(true);
   }));
-  const finishTopicBoardOpen = () => {
-    const board = $('topic-board');
-    if (board.classList.contains('closed')) return;
-    $('topic-open').classList.add('hidden'); $('topic-close').focus();
-  };
-  $('topic-board').addEventListener('transitionend', event => {
-    if (event.target === $('topic-board') && event.propertyName === 'transform') finishTopicBoardOpen();
-  });
-  $('topic-close').addEventListener('click', () => {
-    $('topic-board').classList.add('closed'); $('topic-board').inert = true;
-    $('topic-close').setAttribute('aria-expanded', 'false'); $('topic-open').setAttribute('aria-expanded', 'false'); $('topic-open').classList.remove('hidden');
-    $('topic-open').focus();
-  });
-  $('topic-open').addEventListener('click', () => {
-    $('topic-board').classList.remove('closed'); $('topic-board').inert = false;
-    $('topic-close').setAttribute('aria-expanded', 'true'); $('topic-open').setAttribute('aria-expanded', 'true');
-    window.setTimeout(finishTopicBoardOpen, 300);
-  });
   $('flashcard').addEventListener('click', event => { if (!event.target.closest('button')) flipFlashcard(); });
   $('flashcard').addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); flipFlashcard(); } });
   const speakCurrentVocab = event => { event?.stopPropagation(); speak(activeWords()[state.vocabIndex].word); };
@@ -399,7 +383,6 @@
   $('settings-dialog').addEventListener('click', event => { if (event.target === $('settings-dialog')) $('settings-dialog').close(); });
   $('settings-sound').addEventListener('click', () => toggleSound());
   $('game-pause').addEventListener('click', togglePause); $('space-pause').addEventListener('click', togglePause); $('resume-game').addEventListener('click', togglePause);
-  document.querySelectorAll('[data-start]').forEach(button => button.addEventListener('click', () => { state.practice = false; startGame(button.dataset.start); }));
   $('choose-games').addEventListener('click', () => openGameChooser(false));
   $('chooser-back').addEventListener('click', () => { if (state.practice) backHome(); else openLearning(true); });
   $('chooser-topic').addEventListener('change', () => { state.selectedTopic = $('chooser-topic').value; });
