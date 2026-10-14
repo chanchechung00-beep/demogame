@@ -1,12 +1,22 @@
 /* The home screen is always a topic garden, before and after a lesson. */
 body.home-mode .home-title-sign{top:10%!important;left:50%!important;transform:translateX(-50%);width:min(39vw,590px)!important;height:21%!important;object-fit:contain}
-body.home-mode .topic-board{position:absolute;top:32%!important;left:50%!important;right:auto!important;transform:translateX(-50%)!important;width:min(76vw,1060px)!important;height:auto!important;max-height:none;padding:38px 28px 16px;border:6px solid #c78a42;border-radius:36px;background:linear-gradient(145deg,#fff7da,#ffe7ae);box-shadow:inset 0 0 0 4px #fff4c8,0 8px #9b6029,0 15px 30px #4c794333;overflow:visible;transition:none}
+body.home-mode .topic-board{position:absolute;top:34%!important;left:50%!important;right:auto!important;transform:translateX(-50%)!important;width:min(76vw,1060px)!important;height:auto!important;max-height:none;padding:38px 28px 16px;border:0;border-radius:0;background:transparent;box-shadow:none;overflow:visible;transition:none;backdrop-filter:none}
 body.home-mode .topic-board-title{position:absolute;top:-25px;left:50%;transform:translateX(-50%);width:max-content;max-width:95%;padding:11px 30px;border:4px solid #b97435;border-radius:24px;background:linear-gradient(#ffe4a3,#edb466);box-shadow:inset 0 3px #fff0c7,0 5px #9c602b;color:#80491f;text-shadow:0 2px #fff1c9;font-size:clamp(18px,1.7vw,27px);font-weight:1000;white-space:nowrap}
-.topic-intro{text-align:center;font-size:14px;font-weight:800;color:#9b713c;margin:5px 0 15px}
+.topic-intro{text-align:center;font-size:14px;font-weight:900;color:#376037;margin:5px auto 24px;width:max-content;max-width:100%;padding:6px 17px;background:#fff9dfed;border-radius:30px;box-shadow:0 3px 0 #77a24b55}
 body.home-mode .topic-grid{position:static;display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;grid-template-rows:repeat(2,minmax(0,1fr))!important;gap:14px 24px;padding:0 14px;width:100%;height:auto}
 body.home-mode .topic-card{position:relative;display:block!important;width:100%;height:clamp(100px,16vh,170px);min-height:0;max-width:none;aspect-ratio:auto;cursor:pointer;transition:transform .2s}
-body.home-mode .topic-card img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 4px 0 #e5c18b55)}
-body.home-mode .topic-card.topic-active,body.home-mode .topic-card[aria-pressed="true"]{outline:3px solid #e9b43a;outline-offset:2px;border-radius:22px!important;background:#fff7d5!important}
+body.home-mode .topic-card img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 7px 0 #fff9d8) drop-shadow(0 12px 8px #31663355)}
+body.home-mode .topic-card{transform:rotate(-4deg);isolation:isolate}
+body.home-mode .topic-card:nth-child(even){transform:rotate(4deg)}
+body.home-mode .topic-card:nth-child(3n){transform:rotate(-2deg) translateY(9px)}
+body.home-mode .topic-card:before{content:'';position:absolute;z-index:-1;bottom:-9px;left:16%;width:68%;height:20px;border-radius:50%;background:#3b8f3a40;filter:blur(5px)}
+body.home-mode .topic-card:after{content:'🌼';position:absolute;right:11%;bottom:-6px;font-size:clamp(19px,2vw,29px);filter:drop-shadow(0 2px 1px #41692d44);pointer-events:none}
+body.home-mode .topic-card:nth-child(2n):after{content:'🌿';right:auto;left:10%}
+body.home-mode .topic-card:nth-child(3n):after{content:'🌸'}
+body.home-mode .topic-card:hover{transform:translateY(-6px) rotate(0deg)}
+body.home-mode .topic-card.topic-active,body.home-mode .topic-card[aria-pressed="true"]{outline:0;background:transparent!important}
+body.home-mode .topic-card[aria-pressed="true"]:after{content:'⭐';font-size:30px}
+body.home-mode .topic-card[aria-pressed="true"] img{filter:drop-shadow(0 5px 0 #ffe073) drop-shadow(0 9px 8px #668e2c55)}
 body.home-mode .topic-card:focus-visible{outline:4px solid #1588d2;outline-offset:3px}
 body.home-mode .topic-board-progress{display:none!important}
 body.home-mode .home-friends{bottom:5%!important;left:0!important;width:20%!important;height:27%!important;z-index:2;pointer-events:none}
