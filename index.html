@@ -8,6 +8,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="review-garden.css">
+  <link rel="stylesheet" href="play-garden.css">
 </head>
 <body>
   <div class="app-shell">
@@ -30,7 +31,7 @@
           <div class="home-sky" aria-hidden="true"><span class="home-sun"></span><span class="home-cloud cloud-left"></span><span class="home-cloud cloud-right"></span><span class="home-far-hills"></span><span class="home-near-hills"></span><span class="home-house">🏡</span><span class="home-castle">🏰</span><span class="home-tree tree-left">🌳</span><span class="home-tree tree-right">🌳</span><span class="home-flower flowers-left">🌼 🌷 🌼</span><span class="home-flower flowers-right">🌸 🌼 🌺</span></div>
           <img class="home-title-sign" src="assets/wordland/home-title.png" alt="Khám phá Thế giới Từ Vựng — Cùng học, cùng chơi, cùng lớn khôn!">
           <div class="home-friends" aria-hidden="true"><img class="friend-child child-one" src="assets/wordland/child-girl.png" alt=""><img class="friend-child child-two" src="assets/wordland/child-boy.png" alt=""><img class="friend-pet pet-one" src="assets/wordland/dog.png" alt=""><img class="friend-pet pet-two" src="assets/wordland/cat.png" alt=""><img class="friend-pet pet-three" src="assets/wordland/rabbit.png" alt=""><img class="friend-bird" src="assets/wordland/chick.png" alt=""></div>
-          <button class="review-home-link" type="button" data-nav="review">📒 Từ cần ôn (<span data-review-count>0</span>)</button><div class="home-signposts"><button type="button" data-nav="achievements"><i>💡</i><span>Rèn kỹ năng</span></button></div>
+          <button class="review-home-link" type="button" data-nav="review">📒 Từ cần ôn (<span data-review-count>0</span>)</button><div class="home-signposts"><button type="button" data-nav="practice"><i>💡</i><span>Rèn kỹ năng</span></button></div>
           <div class="section-heading game-section-title" id="games-heading"><span class="sr-only">Chọn một trò chơi</span></div>
           <div class="game-grid wordland-games hidden" id="wordland-games">
             <article class="game-card catch-card"><img class="game-card-art" src="assets/wordland/game-catch-card.png" alt="Game 1: Hứng chữ cái rơi — chú sóc đón chữ trong giỏ"><div class="card-body"><h3 class="sr-only">Hứng chữ cái rơi</h3><button class="play-button coral-button" type="button" data-start="catch" aria-label="Bắt đầu chơi game hứng chữ cái rơi"></button></div></article>
@@ -56,7 +57,7 @@
       </section>
 
       <section class="screen vocab-screen hidden" id="vocab-screen">
-        <div class="learning-toolbar"><div><strong>1. Học từ vựng → 2. Chơi ôn từ</strong><small>Lật thẻ, nghe phát âm và bấm “Đã thuộc”. Khi sẵn sàng, chọn trò chơi nhé!</small></div><div class="learning-buttons"><button type="button" data-learn-play="catch">🧺 Chơi hứng chữ</button><button type="button" data-learn-play="type">🚀 Chơi bắn từ</button><button type="button" data-nav="review">📒 Từ cần ôn (<span data-review-count>0</span>)</button></div></div>
+        <div class="learning-toolbar"><span class="garden-buddy" aria-hidden="true">🌻</span><div class="learning-copy"><strong>Bé đã sẵn sàng chơi chưa?</strong><small>Cùng mang những từ vừa học vào chuyến phiêu lưu nhé!</small></div><div class="learning-buttons"><button class="garden-start" id="choose-game" type="button">▶ Bắt đầu chơi</button><button type="button" data-nav="review">📒 Từ cần ôn (<span data-review-count>0</span>)</button></div></div>
         <div class="vocab-world">
           <img class="vocab-background" src="assets/wordland/vocab-background.png" alt="">
           <header class="vocab-topbar">
@@ -160,6 +161,19 @@
 </div></section>
     </main>
     <dialog class="settings-dialog" id="settings-dialog"><button class="settings-close" id="close-settings" type="button" aria-label="Đóng">×</button><span class="eyebrow">CÀI ĐẶT</span><h2>Tuỳ chỉnh trò chơi</h2><button class="settings-sound" id="settings-sound" type="button" aria-pressed="true"><span id="settings-sound-icon">🔊</span> Âm thanh phát âm</button><p>Âm thanh giúp bé nghe cách đọc từ tiếng Anh.</p></dialog>
+    <dialog class="game-picker" id="game-picker" aria-labelledby="game-picker-title" aria-describedby="game-picker-copy">
+      <button class="picker-close" id="close-game-picker" type="button" aria-label="Đóng chọn trò chơi">×</button>
+      <span class="picker-kicker">🌼 SÂN CHƠI CỦA BÉ 🌼</span>
+      <h2 id="game-picker-title">Bé muốn chơi trò nào?</h2>
+      <p id="game-picker-copy">Chọn một trò chơi để ôn những từ vừa học nhé!</p>
+      <span class="picker-topic" id="game-picker-topic"></span>
+      <div class="picker-games">
+        <button type="button" data-learn-play="catch"><img src="assets/wordland/game-catch-card.png" alt=""><strong>🧺 Hứng chữ cái</strong><small>Di chuyển sóc, hứng chữ vào giỏ</small></button>
+        <button type="button" data-learn-play="type"><img src="assets/wordland/game-type-card.png" alt=""><strong>🚀 Bắn từ vựng</strong><small>Gõ chữ để khám phá các từ tiếng Anh</small></button>
+      </div>
+      <p class="picker-note" id="game-picker-note">Mỗi lượt chơi có 3 trái tim. Cố lên bé nhé!</p>
+    </dialog>
+    <div class="practice-badge hidden" id="practice-badge" role="status">🌱 Chơi thử · Không mất mạng</div>
     <footer class="page-footer"><span>Made for curious little minds <span>♡</span></span><span>Chơi vui · Học mỗi ngày</span></footer>
   </div>
 

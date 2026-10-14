@@ -17,7 +17,7 @@ function boot(storage = new Map(), failWrites = false) {
     append(...nodes) { this.children.push(...nodes); }
     appendChild(node) { this.append(node); }
     replaceChildren(...nodes) { this.children = nodes; }
-    remove() {} focus() {} select() {}
+    remove() {} focus() {} select() {} showModal() { this.open = true; } close() { this.open = false; }
     getBoundingClientRect() { return {left:0,right:0,top:0,bottom:0,width:800,height:500}; }
   }
   const html = fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
@@ -37,7 +37,7 @@ function boot(storage = new Map(), failWrites = false) {
   context.window=context;
   for (const file of ['game-core.js','review-core.js','app.js']) {
     let source=fs.readFileSync(path.join(__dirname,'..',file),'utf8');
-    if(file==='app.js') source=source.replace(/\}\)\(\);\s*$/, 'window.testGame = {state, collect, frame, handleTypingInput};})();');
+    if(file==='app.js') source=source.replace(/\}\)\(\);\s*$/, 'window.testGame = {state, collect, frame, handleTypingInput, finishGame};})();');
     vm.runInContext(source,context,{filename:file});
   }
   return {context, storage, el:id=>byId.get(id), button:(key,value)=>elements.find(e=>e.dataset[key]===value), element:()=>new Element()};
@@ -102,4 +102,39 @@ test('legacy learned words are preserved when saving review progress',()=>{
   const app=boot(storage); app.button('topic','animals').trigger('click'); app.button('learnPlay','catch').trigger('click'); app.context.testGame.collect({text:'!'});
   const saved=JSON.parse(storage.get('littlewords-progress-v2'));
   assert.deepEqual(saved.learned,['cat']); assert.equal(saved.sound,false);
+});
+
+test('start button opens a chooser before a normal game starts',()=>{
+ const app=boot(); app.button('topic','fruit').trigger('click');
+ assert.equal(app.context.testGame.state.running,false);
+ assert.equal(Boolean(app.el('game-picker').open),false);
+ app.el('choose-game').trigger('click');
+ assert.equal(app.el('game-picker').open,true);
+ assert.equal(app.context.testGame.state.running,false);
+ app.button('learnPlay','catch').trigger('click');
+ assert.equal(app.el('game-picker').open,false);
+ assert.equal(app.context.testGame.state.practice,false);
+ app.context.testGame.collect({text:'!'});
+ assert.equal(app.context.testGame.state.lives,2);
+});
+test('home practice allows repeated catch mistakes and replay without losing lives',()=>{
+ const app=boot(); app.button('nav','practice').trigger('click');
+ assert.equal(app.el('game-picker').open,true);
+ app.button('learnPlay','catch').trigger('click');
+ const state=app.context.testGame.state;
+ for(let i=0;i<6;i++) app.context.testGame.collect({text:'!'});
+ assert.equal(state.practice,true); assert.equal(state.lives,3); assert.equal(state.running,true);
+ assert.match(app.el('feedback').textContent,/không mất mạng/);
+ state.score=999; app.context.testGame.finishGame(); assert.equal(state.highScore,0);
+ app.el('play-again').trigger('click'); assert.equal(state.practice,true);
+ app.el('back-home').trigger('click'); assert.equal(app.el('practice-badge').classes.has('hidden'),true);
+ app.button('topic','fruit').trigger('click'); app.el('choose-game').trigger('click'); app.button('learnPlay','catch').trigger('click');
+ assert.equal(state.practice,false); app.context.testGame.collect({text:'!'}); assert.equal(state.lives,2);
+});
+test('practice typing can miss more than three words and keeps going',()=>{
+ const app=boot(); app.button('nav','practice').trigger('click'); app.button('learnPlay','type').trigger('click');
+ const state=app.context.testGame.state;
+ for(let i=0;i<6;i++) {state.lastSpawn=100;state.items=[{text:'cat',el:app.element(),y:600,x:20,speed:40}]; app.context.testGame.frame(101);}
+ assert.equal(state.lives,3); assert.equal(state.running,true); assert.equal(state.practice,true);
+ assert.equal(app.el('space-lives').textContent,'💚 ∞');
 });

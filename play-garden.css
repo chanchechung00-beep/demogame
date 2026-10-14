@@ -1,0 +1,28 @@
+/* A wooden garden sign leading from learning into play. */
+.learning-toolbar{min-height:112px;padding:14px 3%;gap:18px;border-top:6px solid #80b944;background:repeating-linear-gradient(0deg,transparent 0 26px,#b96b2420 27px 29px),linear-gradient(#ffe6a5,#efb967);box-shadow:inset 0 4px #fff4cd,0 -6px 0 #537c32;color:#663c1b}
+.learning-toolbar::before,.learning-toolbar::after{content:'🌿 🌼';position:absolute;top:-25px;font-size:28px;pointer-events:none}
+.learning-toolbar::before{left:14px}.learning-toolbar::after{right:14px;transform:scaleX(-1)}
+.garden-buddy{font-size:54px;filter:drop-shadow(0 3px 0 #a4693633);animation:garden-sway 3s ease-in-out infinite;transform-origin:bottom}
+.learning-copy{flex:1}.learning-toolbar strong{font-size:clamp(16px,1.4vw,23px);font-weight:900}.learning-toolbar small{color:#714626}
+.learning-toolbar button{border:3px solid #fff4cf;border-radius:24px;box-shadow:0 5px 0 #a4652b;padding:12px 20px;transition:transform .18s,filter .18s}
+.learning-toolbar .garden-start{background:linear-gradient(#9be93e,#46b626);color:#fff;font-size:clamp(18px,1.5vw,25px);text-shadow:0 2px #37851d;box-shadow:0 5px 0 #348722,inset 0 3px #c9ff91;font-weight:1000}
+.learning-toolbar button:hover{transform:translateY(-3px);filter:brightness(1.05)}.learning-toolbar button:active{transform:translateY(3px)}
+body.vocabulary-mode.learning-for-game .vocab-world{height:calc(100dvh - 112px)}
+body.home-mode .home-signposts button[data-nav="practice"]{min-width:clamp(200px,18vw,320px);justify-content:center;flex-direction:row;gap:12px;padding:11px 22px;font-size:clamp(13px,1.1vw,17px)}
+body.home-mode .home-signposts button[data-nav="practice"] i{font-size:clamp(22px,2vw,30px)}
+.game-picker{width:min(820px,94vw);max-height:92dvh;overflow:auto;padding:28px 30px 18px;border:8px solid #b87b38;border-radius:34px;background:radial-gradient(ellipse at bottom,#daf1a9,transparent 60%),#fff7dc;box-shadow:inset 0 0 0 4px #ffe4a1,0 16px 0 #74491c55,0 24px 70px #254b3755;color:#684022;text-align:center;font-family:'Nunito',sans-serif}
+.game-picker::backdrop{background:#173e2c99;backdrop-filter:blur(5px)}
+.picker-close{position:absolute;right:12px;top:10px;width:40px;height:40px;border:2px solid #f2c27c;border-radius:50%;background:#fff8dc;color:#825125;font-size:28px;cursor:pointer}
+.picker-kicker{display:block;margin:0 32px 8px;color:#558b36;font-size:13px;font-weight:900;letter-spacing:1px}
+.game-picker h2{font-size:clamp(24px,3vw,36px);margin:6px 0;color:#4c852f}.game-picker p{margin:8px auto;line-height:1.5;max-width:580px}
+.picker-topic{display:inline-block;background:#e2f1bf;border:1px solid #b3d58c;border-radius:20px;padding:5px 16px;margin:5px;font-weight:800}
+.picker-games{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin:14px 0}
+.picker-games button{min-width:0;padding:10px 10px 16px;border:3px solid #e7bb71;border-radius:24px;background:#fffdf0;box-shadow:0 5px 0 #d1a25c;cursor:pointer;color:#69401c;font:inherit;transition:transform .2s}
+.picker-games button:hover{transform:translateY(-5px) rotate(-1deg);border-color:#7bb943}.picker-games button:nth-child(2):hover{transform:translateY(-5px) rotate(1deg)}
+.picker-games img{display:block;width:100%;height:clamp(120px,26vh,250px);object-fit:contain}.picker-games strong,.picker-games small{display:block}.picker-games strong{font-size:21px;margin:6px 0}.picker-games small{font-size:13px}
+.picker-note{color:#46742e;font-weight:800}.game-picker button:focus-visible{outline:4px solid #268cdd;outline-offset:4px}
+.practice-badge{position:fixed;z-index:90;bottom:8px;left:50%;transform:translateX(-50%);max-width:95vw;white-space:nowrap;padding:7px 18px;border:2px solid #fff2c3;border-radius:25px;background:#327c38;color:white;box-shadow:0 3px 0 #214e28;font-size:14px;font-weight:900;pointer-events:none}
+body.practice-mode .stat-lives>img{display:none}body.practice-mode #life-icons{display:inline!important;font-size:24px}
+@keyframes garden-sway{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(7deg)}}
+@media(max-width:700px){.learning-toolbar{min-height:145px;display:flex;flex-wrap:wrap;gap:6px 12px;padding:9px 12px}.garden-buddy{font-size:34px}.learning-copy{flex-basis:70%}.learning-toolbar strong{font-size:16px}.learning-toolbar small{font-size:11px}.learning-buttons{width:100%;justify-content:center;margin:0}.learning-toolbar button{padding:8px 12px;font-size:12px}.learning-toolbar .garden-start{font-size:18px}body.vocabulary-mode.learning-for-game .vocab-world{height:calc(100dvh - 145px)}.game-picker{padding:22px 12px 12px;border-width:5px}.picker-games{gap:10px}.picker-games button{padding:5px 5px 12px}.picker-games strong{font-size:16px}.picker-games small{font-size:11px}.game-picker p{font-size:13px}.picker-kicker{font-size:10px}body.home-mode .home-signposts button[data-nav="practice"]{min-width:170px;padding:7px 16px;font-size:12px}.practice-badge{font-size:12px}}
+@media(prefers-reduced-motion:reduce){.garden-buddy{animation:none}.picker-games button,.learning-toolbar button{transition:none}}

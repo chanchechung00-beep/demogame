@@ -4,6 +4,16 @@
   const $ = id => document.getElementById(id);
   const state = { mode: 'catch', score: 0, lives: 3, round: 0, order: [], current: null, collected: [], typedBuffer: '', typedCount: 0, items: [], playerX: 50, running: false, sound: true, learned: new Set(), timer: null, raf: null, lastSpawn: 0, lastFrame: 0, completedWords: [], vocabIndex: 0, cardFlipped: false, paused: false, selectedTopic: null };
   const activeWords = () => core.getWords(state.selectedTopic);
+  state.practice = false;
+  let pickerPractice = false;
+  const openGamePicker = (practice = false) => {
+    pickerPractice = practice;
+    $('game-picker-title').textContent = practice ? 'Cùng rèn kỹ năng nào!' : 'Bé muốn chơi trò nào?';
+    $('game-picker-copy').textContent = practice ? 'Chọn trò để chơi thử. Cứ thử lại thoải mái, bé không mất mạng!' : 'Chọn một trò chơi để ôn những từ vừa học nhé!';
+    $('game-picker-topic').textContent = `Chủ đề: ${topicLabels[state.selectedTopic] || topicLabels.animals}`;
+    $('game-picker-note').textContent = practice ? '💚 Không mất mạng · Luyện tập theo tốc độ của bé' : 'Mỗi lượt chơi có 3 trái tim. Cố lên bé nhé!';
+    $('game-picker').showModal();
+  };
   const topicLabels = { animals: 'Động vật', farm: 'Nông trại', family: 'Gia đình', ocean: 'Đại dương', fruit: 'Trái cây', objects: 'Đồ vật', space: 'Không gian', nature: 'Thiên nhiên' };
   const learnedKey = (entry, topic = state.selectedTopic) => `${topic || 'animals'}:${entry.word}`;
   const isLearned = entry => state.learned.has(learnedKey(entry)) || (state.selectedTopic === 'animals' && state.learned.has(entry.word));
@@ -123,6 +133,12 @@
   };
   window.addEventListener('resize', () => { if (state.mode === 'catch' && state.current) renderSlots(); });
   const updateStats = () => {
+    if (state.practice) {
+      $('score-value').textContent = state.score; $('space-score').textContent = state.score;
+      $('life-icons').textContent = '💚 ∞'; $('space-lives').textContent = '💚 ∞';
+      $('lives-value').setAttribute('aria-label', 'Chơi thử không mất mạng'); $('space-lives').setAttribute('aria-label', 'Chơi thử không mất mạng');
+      return;
+    }
     $('score-value').textContent = state.score; $('life-icons').textContent = '❤️'.repeat(state.lives) + '🤍'.repeat(3 - state.lives); $('lives-value').setAttribute('aria-label', `${state.lives} lượt chơi còn lại`);
     $('space-score').textContent = state.score; $('space-lives').textContent = '❤️'.repeat(state.lives) + '🤍'.repeat(3 - state.lives); $('space-lives').setAttribute('aria-label', `${state.lives} lượt chơi còn lại`);
   };
@@ -238,14 +254,15 @@
     state.timer = setTimeout(() => { state.round++; setupRound(); if (state.lives > 0 && state.round < state.order.length) startLoop(); }, 1600);
   };
   const loseLife = (message = 'Một chữ cái đã rơi mất. Cố lên nhé!') => {
-    state.lives--; updateStats();
+    if (!state.practice) state.lives--;
+    updateStats();
     if (state.lives <= 0) { finishGame(); return; }
     if (state.mode === 'type') {
       $('word-input').value = ''; state.typedBuffer = ''; state.typedCount = 0;
       state.items.forEach(item => { item.el.textContent = item.text; item.el.classList.remove('target-word'); });
       setFeedback('Ôi, một từ đã chạm đất. Mình thử từ khác nhé!', 'gentle');
     }
-    else setFeedback(message, 'gentle');
+    else setFeedback(state.practice ? `Cần chữ ${core.nextLetter(state.current.word, state.collected)}. Bé thử lại nhé, không mất mạng đâu!` : message, 'gentle');
   };
   const frame = timestamp => {
     if (!state.running) return;
@@ -267,7 +284,10 @@
     if (state.running) state.raf = requestAnimationFrame(frame);
   };
   const startLoop = () => { if (state.lives <= 0 || state.round >= state.order.length) return finishGame(); state.running = true; state.lastFrame = 0; state.raf = requestAnimationFrame(frame); };
-  const startGame = mode => {
+  const startGame = (mode, practice = false) => {
+    state.practice = practice;
+    $('practice-badge').classList.toggle('hidden', !practice);
+    document.body.classList.toggle('practice-mode', practice);
     document.body.classList.remove('space-result', 'garden-result');
     clearTimeout(state.timer); cancelAnimationFrame(state.raf); state.running = false; state.paused = false; $('pause-overlay').classList.add('hidden'); state.mode = mode; state.score = 0; state.lives = 3; state.round = 0; state.completedWords = [];
     state.order = shuffle(activeWords()).slice(0, mode === 'type' ? activeWords().length : 5);
@@ -275,7 +295,8 @@
     showScreen('play-screen'); setupRound(); startLoop();
   };
   const finishGame = () => {
-    state.running = false; cancelAnimationFrame(state.raf); clearTimeout(state.timer); state.highScore = Math.max(state.highScore, state.score); save(); updateHome();
+    state.running = false; cancelAnimationFrame(state.raf); clearTimeout(state.timer); if (!state.practice) state.highScore = Math.max(state.highScore, state.score); save(); updateHome();
+    $('practice-badge').classList.add('hidden');
     document.body.classList.remove('space-mode', 'orchard-mode'); $('game-panel').classList.remove('space-game', 'catch-game'); $('space-hud').classList.add('hidden');
     $('final-score').textContent = state.score; $('result-heading').textContent = state.lives > 0 ? 'Tuyệt vời lắm!' : 'Bé đã cố gắng rồi!';
     document.body.classList.toggle('space-result', state.mode === 'type');
@@ -325,9 +346,10 @@
       state.running = false; cancelAnimationFrame(state.raf); state.timer = setTimeout(finishGame, 1500);
     }
   };
-  const backHome = () => { document.body.classList.remove('space-result', 'garden-result'); state.running = false; state.paused = false; $('pause-overlay').classList.add('hidden'); clearTimeout(state.timer); cancelAnimationFrame(state.raf); document.body.classList.remove('space-mode', 'orchard-mode'); $('game-panel').classList.remove('space-game', 'catch-game'); $('space-hud').classList.add('hidden'); showScreen('home-screen'); document.querySelectorAll('.nav-item').forEach(item => item.classList.toggle('active', item.dataset.nav === 'home')); updateHome(); };
+  const backHome = () => { $('practice-badge').classList.add('hidden'); document.body.classList.remove('practice-mode'); state.practice = false; document.body.classList.remove('space-result', 'garden-result'); state.running = false; state.paused = false; $('pause-overlay').classList.add('hidden'); clearTimeout(state.timer); cancelAnimationFrame(state.raf); document.body.classList.remove('space-mode', 'orchard-mode'); $('game-panel').classList.remove('space-game', 'catch-game'); $('space-hud').classList.add('hidden'); showScreen('home-screen'); document.querySelectorAll('.nav-item').forEach(item => item.classList.toggle('active', item.dataset.nav === 'home')); updateHome(); };
   const openSettings = () => { if (!$('settings-dialog').open) $('settings-dialog').showModal(); };
   const navigate = destination => {
+    if (destination === 'practice') { openGamePicker(true); return; }
     if (destination === 'review') { openReview(); return; }
     if (destination === 'vocabulary') { openLearning(); return; }
     if (destination === 'settings') { openSettings(); return; }
@@ -382,13 +404,15 @@
   $('game-pause').addEventListener('click', togglePause); $('space-pause').addEventListener('click', togglePause); $('resume-game').addEventListener('click', togglePause);
   document.querySelectorAll('[data-start]').forEach(button => button.addEventListener('click', () => openLearning(true)));
   $('back-home').addEventListener('click', backHome); $('result-home').addEventListener('click', backHome); $('space-exit').addEventListener('click', backHome);
-  $('play-again').addEventListener('click', () => startGame(state.mode)); $('space-result-replay').addEventListener('click', () => startGame(state.mode)); $('space-result-home').addEventListener('click', backHome); $('garden-result-replay').addEventListener('click', () => startGame(state.mode)); $('garden-result-home').addEventListener('click', backHome); $('skip-word').addEventListener('click', () => { if (!state.running || state.mode !== 'catch') return; rememberMistake(state.current); cancelAnimationFrame(state.raf); state.running = false; state.round++; setupRound(); if (state.round < state.order.length) startLoop(); else finishGame(); });
+  $('play-again').addEventListener('click', () => startGame(state.mode, state.practice)); $('space-result-replay').addEventListener('click', () => startGame(state.mode, state.practice)); $('space-result-home').addEventListener('click', backHome); $('garden-result-replay').addEventListener('click', () => startGame(state.mode, state.practice)); $('garden-result-home').addEventListener('click', backHome); $('skip-word').addEventListener('click', () => { if (!state.running || state.mode !== 'catch') return; rememberMistake(state.current); cancelAnimationFrame(state.raf); state.running = false; state.round++; setupRound(); if (state.round < state.order.length) startLoop(); else finishGame(); });
   $('move-left').addEventListener('pointerdown', () => movePlayer(-1)); $('move-right').addEventListener('pointerdown', () => movePlayer(1));
   $('playfield').addEventListener('pointerdown', event => { if (state.mode !== 'catch') return; $('playfield').setPointerCapture?.(event.pointerId); movePlayerToPointer(event); });
   $('playfield').addEventListener('pointermove', event => { if (state.mode === 'catch' && event.buttons) movePlayerToPointer(event); });
   $('word-input').addEventListener('input', handleTypingInput);
   document.addEventListener('keydown', event => { if (!state.running || state.mode !== 'catch') return; if (event.key === 'ArrowLeft') { event.preventDefault(); movePlayer(-1); } if (event.key === 'ArrowRight') { event.preventDefault(); movePlayer(1); } });
-  document.querySelectorAll('[data-learn-play]').forEach(button => button.addEventListener('click', () => startGame(button.dataset.learnPlay)));
+  $('choose-game').addEventListener('click', () => openGamePicker(false));
+  $('close-game-picker').addEventListener('click', () => $('game-picker').close());
+  document.querySelectorAll('[data-learn-play]').forEach(button => button.addEventListener('click', () => { $('game-picker').close(); startGame(button.dataset.learnPlay, pickerPractice); }));
   $('review-start').addEventListener('click', () => beginReview());
   $('review-back-list').addEventListener('click', () => { state.reviewEntry = null; $('review-quiz').classList.add('hidden'); $('review-list').classList.remove('hidden'); renderReview(); });
   $('review-next').addEventListener('click', () => { $('review-list').classList.remove('hidden'); beginReview(); });
