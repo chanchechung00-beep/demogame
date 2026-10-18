@@ -18,7 +18,31 @@
   state.reviewWords = review.restore(saved.reviewWords);
   state.reviewEntry = null;
   state.practice = false;
-  const save = () => { try { localStorage.setItem(storageKey, JSON.stringify({ highScore: state.highScore, learned: [...state.learned], sound: state.sound, reviewWords: state.reviewWords })); $('storage-notice').classList.add('hidden'); } catch { $('storage-notice').classList.remove('hidden'); } };
+  const save = async () => {
+    try {
+        if (!auth.currentUser) {
+            console.log("Chưa đăng nhập nên chưa lưu lên Firestore được.");
+            return;
+        }
+
+        const userDocRef = doc(db, "players", auth.currentUser.uid);
+
+        await updateDoc(userDocRef, {
+            bestScore: state.highScore, 
+            learned: [...state.learned],
+            sound: state.sound,
+            reviewWords: state.reviewWords
+        });
+
+        const notice = $('storage-notice');
+        if (notice) notice.classList.add('hidden');
+
+    } catch (error) {
+        console.error("Lỗi khi lưu dữ liệu lên Firestore:", error);
+        const notice = $('storage-notice');
+        if (notice) notice.classList.remove('hidden');
+    }
+  };
   const updateHome = () => {
     $('home-star-points').textContent = state.highScore;
     const pending = review.entries(state.reviewWords).filter(entry => !entry.resolved).length;
@@ -353,7 +377,6 @@ const showScreen = screen => {
 
     save();
     updateHome();
-    if (!state.practice && !state.scoreSave) { state.scoreSave = true; if (typeof window.luuThanhTichFirebase === "function") { window.luuThanhTichFirebase(state.score); }}
     document.body.classList.remove('space-mode', 'orchard-mode'); $('game-panel').classList.remove('space-game', 'catch-game'); $('space-hud').classList.add('hidden');
     $('final-score').textContent = state.score; $('result-heading').textContent = state.lives > 0 ? 'Tuyệt vời lắm!' : 'Bé đã cố gắng rồi!';
     document.body.classList.toggle('space-result', state.mode === 'type');

@@ -5,8 +5,12 @@ import {
     onAuthStateChanged,
     signOut
 } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js";
+import { doc,
+    setDoc,
+    getDoc
+} from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
 
-import { auth } from "./firebase-config.js";
+import { auth, db } from "./firebase-config.js";
 
 // Đăng ký
 window.xuLyDangKy = async function (email, password) {
@@ -16,7 +20,18 @@ window.xuLyDangKy = async function (email, password) {
     }
 
     try {
-        await createUserWithEmailAndPassword(auth, email, password);
+        // 1. Tạo tài khoản người dùng trên Firebase Authentication
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // 2. Tạo document lưu điểm số mặc định trên Firestore (collection 'players')
+        await setDoc(doc(db, "players", user.uid), {
+            email: user.email,
+            bestScore: 0,
+            totalScore: 0,
+            createdAt: new Date().toISOString()
+        });
+
         alert("Tạo tài khoản học tập thành công! 🎉");
         window.location.href = "login.html";
     } catch (error) {
@@ -24,7 +39,6 @@ window.xuLyDangKy = async function (email, password) {
         alert("Không thể đăng ký: " + error.message);
     }
 };
-
 // Đăng nhập
 window.xuLyDangNhap = async function (email, password) {
     if (!email || !password) {
@@ -69,4 +83,35 @@ onAuthStateChanged(auth, (user) => {
             window.location.href = "login.html";
         }
     }
+        if (user) {
+            capNhatDiemCaoNhat(user);
+        } else {
+            const scoreElement = document.getElementById("home-star-points");
+            if (scoreElement) {
+                scoreElement.textContent = "0";
+            }
+        }
 });
+
+async function capNhatDiemCaoNhat(user) {
+    if (!user) return;
+    
+    try {
+        const userDocRef = doc(db, "players", user.uid);
+        const userSnap = await getDoc(userDocRef);
+
+        if (userSnap.exists()) {
+            const userData = userSnap.data();
+            const bestScore = userData.bestScore || 0;
+
+            const scoreElement = document.getElementById("home-star-points");
+            if (scoreElement) {
+                scoreElement.textContent = bestScore;
+            }
+        } else {
+            console.log("Không tìm thấy dữ liệu điểm của người dùng này trên Firestore.");
+        }
+    } catch (error) {
+        console.error("Lỗi khi tải điểm cao nhất:", error);
+    }
+}

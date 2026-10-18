@@ -35,3 +35,27 @@ if (logoutButton) {
         }
     });
 }
+
+// Hàm tải điểm cao nhất từ Firestore và điền vào thẻ HTML
+async function loadBestScore(user) {
+  if (!user) return;
+
+  try {
+    const userDocRef = doc(db, "players", user.uid);
+    const userSnap = await getDoc(userDocRef);
+
+    if (userSnap.exists()) {
+      const data = userSnap.data();
+      // Lấy giá trị bestScore từ Firestore (nếu chưa có thì lấy mặc định là 0)
+      const bestScore = data.bestScore ?? 0;
+
+      // Tìm thẻ b#home-star-points và cập nhật số điểm
+      const scoreElement = document.getElementById("home-star-points");
+      if (scoreElement) {
+        scoreElement.textContent = bestScore;
+      }
+    }
+  } catch (error) {
+    console.error("Lỗi khi tải điểm cao nhất từ Firestore:", error);
+  }
+}

@@ -286,3 +286,7 @@ body.home-mode .account-panel #tenTaiKhoan {
     font-weight: 700;
     text-shadow: 1px 2px 4px rgba(0, 0, 0, 0.85);
 }
+body.game-mode .account-panel,
+body.chooser-mode .account-panel {
+    display: none !important;
+}
