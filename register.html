@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Đăng Ký Tài Khoản Học Tập 🎉</title>
+    <script src="https://www.gstatic.com/firebasejs/13.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/13.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore-compat.js"></script>
+
+    <script type="module" src="firebase-auth.js"></script>
+    <style>
+        body { background: #eef9ec; font-family: 'Comic Sans MS', cursive, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .register-box { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 8px 0 #badcb3; border: 4px solid #7cb96b; text-align: center; width: 320px; }
+        h2 { color: #438a2e; margin-bottom: 20px; }
+        input { width: 90%; padding: 12px; margin: 10px 0; border: 3px solid #badcb3; border-radius: 12px; font-size: 16px; outline: none; }
+        button { width: 98%; padding: 12px; background: #ff9800; border: none; border-radius: 12px; color: white; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #e65100; }
+        button:active { transform: translateY(4px); box-shadow: none; }
+        p { color: #666; margin-top: 15px; font-size: 14px; }
+        a { color: #7cb96b; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+
+<body>
+
+    <div class="register-box">
+        <h2>🎉 ĐĂNG KÝ TÀI KHOẢN</h2>
+        <input type="email" id="regEmail" placeholder="Nhập Email mới...">
+        <input type="password" id="regPassword" placeholder="Nhập Mật khẩu...">
+        <button onclick="xuLyDangKy(document.getElementById('regEmail').value, document.getElementById('regPassword').value)">TẠO TÀI KHOẢN</button>
+        <p>Đã có tài khoản rồi? <a href="login.html">Quay lại đăng nhập</a></p>
+    </div>
+
+</body>
+</html>

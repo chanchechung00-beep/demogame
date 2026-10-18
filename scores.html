@@ -1,0 +1,365 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Điểm số của tôi</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+
+    background-image: url("./assets/wordland/game1-result-background.png");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    }
+
+    .page {
+      width: min(900px, 92%);
+      margin: 40px auto;
+    }
+
+    .header {
+      margin-bottom: 24px;
+    }
+
+    .header h1 {
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      color: #68738a;
+      line-height: 1.6;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .stat-card {
+      padding: 24px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px #26324b0d;
+    }
+
+    .stat-card h2 {
+      margin: 0 0 14px;
+      font-size: 15px;
+      color: #68738a;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: bold;
+      overflow-wrap: anywhere;
+    }
+
+    .panel {
+      margin-top: 22px;
+      padding: 22px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px #26324b0d;
+    }
+
+    #status {
+      line-height: 1.6;
+      color: #68738a;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 24px;
+    }
+
+    .button {
+      display: inline-block;
+      padding: 12px 18px;
+      border: 0;
+      border-radius: 10px;
+      background: #5368df;
+      color: white;
+      font-weight: bold;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .button.secondary {
+      background: #e8ecff;
+      color: #3547b4;
+    }
+
+    @media (max-width: 650px) {
+      .page {
+        margin: 24px auto;
+      }
+
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      .stat-card {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="page">
+    <header class="header">
+      <h1>🏆 Điểm số của tôi</h1>
+      <p style="color : black">
+        Theo dõi điểm số và thành tích học tập của bạn.
+      </p>
+    </header>
+
+    <section class="stats" aria-label="Thống kê điểm số">
+      <article class="stat-card">
+        <h2>⭐ Điểm cao nhất</h2>
+        <div class="stat-value" id="best-score">—</div>
+      </article>
+
+      <article class="stat-card">
+        <h2>🎮 Số ván đã chơi</h2>
+        <div class="stat-value" id="games-played">—</div>
+      </article>
+
+      <article class="stat-card">
+        <h2>✨ Tổng điểm tích lũy</h2>
+        <div class="stat-value" id="total-score">—</div>
+      </article>
+    </section>
+
+    <section class="panel">
+      <h2>📊 Thông tin tài khoản</h2>
+      <p id="player-name">Người chơi: —</p>
+      <p id="status" role="status" aria-live="polite">
+        Đang tải dữ liệu...
+      </p>
+    </section>
+    
+    <section class="panel">
+        <h2>🏆 Bảng xếp hạng Wordland</h2>
+        <p id="leaderboard-status" role="status">
+            Đang tải bảng xếp hạng...
+        </p>
+
+        <div style="overflow-x:auto">
+            <table style="width:100%; border-collapse:collapse; text-align:left">
+                <thead>
+                    <tr>
+                        <th style="padding:12px">Hạng</th>
+                        <th style="padding:12px">Người chơi</th>
+                        <th style="padding:12px">Điểm cao nhất</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-body">
+                    <tr>
+                        <td colspan="3" style="padding:12px">
+                            Đang tải...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+
+    <nav class="actions" aria-label="Điều hướng">
+      <a class="button" href="./index.html">🏠 Về Trang Chủ</a>
+      <button class="button secondary" id="refresh-button" type="button">
+        🔄 Tải lại điểm
+      </button>
+    </nav>
+  </main>
+
+  <script type="module">
+    import { auth, db } from './firebase-config.js';
+
+    import {
+      onAuthStateChanged
+    } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js';
+
+
+    import {
+        doc,
+        getDoc,
+        collection,
+        getDocs,
+        query,
+        orderBy,
+        limit
+    } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js';
+
+
+    const $ = id => document.getElementById(id);
+
+    let currentUser = null;
+    let authInitialized = false;
+
+    function showNumber(id, value) {
+      const number = Number(value);
+      $(id).textContent =
+        Number.isFinite(number)
+          ? number.toLocaleString('vi-VN')
+          : '0';
+    }
+
+    async function loadScores() {
+      const status = $('status');
+
+      if (!currentUser) {
+        $('best-score').textContent = '—';
+        $('games-played').textContent = '—';
+        $('total-score').textContent = '—';
+        $('player-name').textContent = 'Người chơi: —';
+        status.textContent = 'Bạn cần đăng nhập Wordland để xem điểm số.';
+        return;
+      }
+
+      status.textContent = 'Đang tải dữ liệu từ Firebase...';
+      $('best-score').textContent = '—';
+      $('games-played').textContent = '—';
+      $('total-score').textContent = '—';
+
+      try {
+        const playerRef = doc(db, 'players', currentUser.uid);
+        const snapshot = await getDoc(playerRef);
+
+        if (!snapshot.exists()) {
+          $('player-name').textContent =
+            'Người chơi: ' +
+            (currentUser.displayName ||
+             currentUser.email?.split('@')[0] ||
+             'Người chơi');
+
+          status.textContent =
+            'Chưa tìm thấy dữ liệu thành tích cho tài khoản này trong Firestore.';
+
+          return;
+        }
+
+        const data = snapshot.data();
+
+        showNumber('best-score', data.bestScore);
+        showNumber('games-played', data.gamesPlayed);
+        showNumber('total-score', data.totalScore);
+
+        $('player-name').textContent =
+          'Người chơi: ' +
+          (data.displayName ||
+           currentUser.displayName ||
+           currentUser.email?.split('@')[0] ||
+           'Người chơi');
+
+        status.textContent = 'Đã tải dữ liệu thành công.';
+      } catch (error) {
+        console.error('Lỗi tải điểm số:', error);
+
+        status.textContent =
+          'Không tải được điểm số. Hãy kiểm tra kết nối, cấu hình Firebase và quyền Firestore.';
+      }
+    }
+
+    
+    async function loadLeaderboard() {
+        const status = document.getElementById('leaderboard-status');
+        const body = document.getElementById('leaderboard-body');
+
+        status.textContent = 'Đang tải bảng xếp hạng...';
+
+        try {
+            const leaderboardQuery = query(
+                collection(db, 'players'),
+                orderBy('bestScore', 'desc'),
+                limit(20)
+            );
+
+            const snapshot = await getDocs(leaderboardQuery);
+
+            body.replaceChildren();
+
+            if (snapshot.empty) {
+                body.innerHTML =
+                    '<tr><td colspan="3">Chưa có thành tích nào.</td></tr>';
+                status.textContent = 'Chưa có dữ liệu.';
+                return;
+            }
+
+            let rank = 0;
+
+            snapshot.forEach(playerDoc => {
+                rank++;
+
+                const player = playerDoc.data();
+                const row = document.createElement('tr');
+
+                const rankCell = document.createElement('td');
+                const nameCell = document.createElement('td');
+                const scoreCell = document.createElement('td');
+
+                rankCell.style.padding = '12px';
+                nameCell.style.padding = '12px';
+                scoreCell.style.padding = '12px';
+
+                rankCell.textContent =
+                    rank === 1 ? '🥇 1' :
+                    rank === 2 ? '🥈 2' :
+                    rank === 3 ? '🥉 3' : rank;
+
+                nameCell.textContent = player.displayName || 'Người chơi';
+
+                scoreCell.textContent =
+                    (Number(player.bestScore) || 0).toLocaleString('vi-VN');
+
+                row.append(rankCell, nameCell, scoreCell);
+                body.appendChild(row);
+            });
+
+        status.textContent = `Đang hiển thị top ${snapshot.size} người chơi.`;
+
+    } catch (error) {
+        console.error('Lỗi tải bảng xếp hạng:', error);
+
+        status.textContent =
+            'Không tải được bảng xếp hạng. Hãy kiểm tra đăng nhập và quyền Firestore.';
+    }
+}
+
+
+    onAuthStateChanged(auth, user => {
+      currentUser = user;
+      authInitialized = true;
+      loadScores();
+    });
+
+    onAuthStateChanged(auth, user => {
+    currentUser = user;
+    authInitialized = true;
+    loadScores();
+    loadLeaderboard();
+    });
+
+    $('refresh-button').addEventListener('click', () => {
+      if (authInitialized) {
+        loadScores();
+      }
+    });
+  </script>
+</body>
+</html>

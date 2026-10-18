@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập Web học Tiếng Anh</title>
+    <link rel="stylesheet" href="style.css">
+    <!--Nhúng Firebase-->
+    <script src="https://www.gstatic.com/firebasejs/13.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/13.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore-compat.js"></script>
+    <!--Nhúng file chứa key-->
+    <script src="firebase-config.js"></script>
+    <script type="module" src="firebase-auth.js"></script>
+    <style>
+        body { background: #eef9ec; font-family: 'Comic Sans MS', cursive, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-box { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 8px 0 #badcb3; border: 4px solid #7cb96b; text-align: center; width: 320px; }
+        h2 { color: #438a2e; margin-bottom: 20px; }
+        input { width: 90%; padding: 12px; margin: 10px 0; border: 3px solid #badcb3; border-radius: 12px; font-size: 16px; outline: none; }
+        input:focus { border-color: #7cb96b; }
+        button { width: 98%; padding: 12px; background: #7cb96b; border: none; border-radius: 12px; color: white; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #548b43; }
+        button:active { transform: translateY(4px); box-shadow: none; }
+        p { color: #666; margin-top: 15px; font-size: 14px; }
+        a { color: #7cb96b; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <h2>🎉 ĐĂNG NHẬP</h2>
+        <input type="email" id="email" placeholder="Nhập Email của bé...">
+        <input type="password" id="password" placeholder="Nhập Mật khẩu...">
+        <button onclick="xuLyDangNhap(document.getElementById('email').value, document.getElementById('password').value)">VÀO CHƠI NGAY</button>
+        <p>Bé chưa có tài khoản? <a href="register.html">Đăng ký tại đây</a></p>
+    </div>
+</body>
+</html>

@@ -2,7 +2,7 @@
   const core = window.GameCore;
   const review = window.ReviewCore;
   const $ = id => document.getElementById(id);
-  const state = { mode: 'catch', score: 0, lives: 3, round: 0, order: [], current: null, collected: [], typedBuffer: '', typedCount: 0, items: [], playerX: 50, running: false, sound: true, learned: new Set(), timer: null, raf: null, lastSpawn: 0, lastFrame: 0, completedWords: [], vocabIndex: 0, cardFlipped: false, paused: false, selectedTopic: null };
+  const state = { mode: 'catch', score: 0, lives: 3, round: 0, order: [], current: null, collected: [], typedBuffer: '', typedCount: 0, items: [], playerX: 50, running: false, sound: true, learned: new Set(), timer: null, raf: null, lastSpawn: 0, lastFrame: 0, completedWords: [], vocabIndex: 0, cardFlipped: false, paused: false, selectedTopic: null, scoreSaved: false};
   const activeWords = () => core.getWords(state.selectedTopic);
   const topicLabels = { animals: 'Động vật', farm: 'Nông trại', family: 'Gia đình', ocean: 'Đại dương', fruit: 'Trái cây', objects: 'Đồ vật', space: 'Không gian', nature: 'Thiên nhiên' };
   const learnedKey = (entry, topic = state.selectedTopic) => `${topic || 'animals'}:${entry.word}`;
@@ -29,7 +29,55 @@
     $('progress-fill').style.width = `${percent}%`;
     $('progress-count').textContent = `${percent}%`;
   };
-  const showScreen = screen => { for (const id of ['home-screen', 'play-screen', 'result-screen', 'vocab-screen', 'review-screen', 'chooser-screen']) $(id).classList.toggle('hidden', id !== screen); document.body.classList.toggle('home-mode', screen === 'home-screen'); document.body.classList.toggle('vocabulary-mode', screen === 'vocab-screen'); document.body.classList.toggle('review-mode', screen === 'review-screen'); document.body.classList.toggle('chooser-mode', screen === 'chooser-screen'); document.body.classList.toggle('practice-mode', state.practice && (screen === 'play-screen' || screen === 'result-screen')); };
+  
+const showScreen = screen => {
+  const screenIds = [
+    'home-screen',
+    'play-screen',
+    'result-screen',
+    'vocab-screen',
+    'review-screen',
+    'chooser-screen'
+  ];
+
+  for (const id of screenIds) {
+    const element = $(id);
+
+    if (!element) {
+      console.warn(`Wordland: Không tìm thấy phần tử #${id}`);
+      continue;
+    }
+
+    element.classList.toggle('hidden', id !== screen);
+  }
+
+  document.body.classList.toggle(
+    'home-mode',
+    screen === 'home-screen'
+  );
+
+  document.body.classList.toggle(
+    'vocabulary-mode',
+    screen === 'vocab-screen'
+  );
+
+  document.body.classList.toggle(
+    'review-mode',
+    screen === 'review-screen'
+  );
+
+  document.body.classList.toggle(
+    'chooser-mode',
+    screen === 'chooser-screen'
+  );
+
+  document.body.classList.toggle(
+    'practice-mode',
+    state.practice &&
+      (screen === 'play-screen' || screen === 'result-screen')
+  );
+};
+
   const renderFlashcard = () => {
     const words = activeWords(); state.vocabIndex %= words.length; const learnedCount = words.filter(isLearned).length; const entry = words[state.vocabIndex];
     $('vocab-emoji').textContent = entry.emoji; $('vocab-back-emoji').textContent = entry.emoji;
@@ -277,14 +325,35 @@
   };
   const startLoop = () => { if (state.lives <= 0 || state.round >= state.order.length) return finishGame(); state.running = true; state.lastFrame = 0; state.raf = requestAnimationFrame(frame); };
   const startGame = mode => {
+    state.scoreSaved = false;
     document.body.classList.remove('space-result', 'garden-result');
-    clearTimeout(state.timer); cancelAnimationFrame(state.raf); state.running = false; state.paused = false; $('pause-overlay').classList.add('hidden'); state.mode = mode; state.score = 0; state.lives = 3; state.round = 0; state.completedWords = [];
+    clearTimeout(state.timer); cancelAnimationFrame(state.raf); state.running = false; state.paused = false; $('pause-overlay').classList.add('hidden'); state.mode = mode; state.score = 0; state.scoreSaved = false; state.lives = 3; state.round = 0; state.completedWords = [];
     state.order = shuffle(activeWords()).slice(0, mode === 'type' ? activeWords().length : 5);
     $('play-mode-icon').textContent = mode === 'catch' ? '🧺' : '⌨️'; $('play-eyebrow').textContent = mode === 'catch' ? 'TRÒ CHƠI 01' : 'TRÒ CHƠI 02'; $('play-title').textContent = mode === 'catch' ? 'Hứng chữ cái' : 'Gõ từ thật nhanh';
     showScreen('play-screen'); setupRound(); startLoop();
   };
   const finishGame = () => {
-    state.running = false; cancelAnimationFrame(state.raf); clearTimeout(state.timer); if (!state.practice) state.highScore = Math.max(state.highScore, state.score); save(); updateHome();
+    state.running = false; cancelAnimationFrame(state.raf); clearTimeout(state.timer);
+    if (!state.practice) {
+      state.highScore = Math.max(state.highScore, state.score);
+
+      if (!state.scoreSaved) {
+        state.scoreSaved = true;
+
+        window.dispatchEvent(
+          new CustomEvent('wordland:game-finished', {
+            detail: {
+              score: state.score,
+              practice: state.practice
+            }
+          })
+        );
+      }
+    }
+
+    save();
+    updateHome();
+    if (!state.practice && !state.scoreSave) { state.scoreSave = true; if (typeof window.luuThanhTichFirebase === "function") { window.luuThanhTichFirebase(state.score); }}
     document.body.classList.remove('space-mode', 'orchard-mode'); $('game-panel').classList.remove('space-game', 'catch-game'); $('space-hud').classList.add('hidden');
     $('final-score').textContent = state.score; $('result-heading').textContent = state.lives > 0 ? 'Tuyệt vời lắm!' : 'Bé đã cố gắng rồi!';
     document.body.classList.toggle('space-result', state.mode === 'type');
@@ -352,6 +421,32 @@
     if (destination === 'review') { openReview(); return; }
     if (destination === 'vocabulary') { openLearning(); return; }
     if (destination === 'settings') { openSettings(); return; }
+
+    if (destination === 'achievements') {
+        showScreen('achievements-screen');
+        document.querySelectorAll('.nav-item').forEach(item =>
+            item.classList.toggle('active', item.dataset.nav === 'achievements')
+        );
+        return;
+    }
+
+    if (destination === 'achievements') {
+      showScreen('achievements-screen');
+
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.toggle(
+          'active',
+          item.dataset.nav === 'achievements'
+        );
+      });
+
+      window.dispatchEvent(
+        new Event('wordland:load-achievements')
+      );
+
+      return;
+    }
+
     backHome();
     document.querySelectorAll('.nav-item').forEach(item => item.classList.toggle('active', item.dataset.nav === destination));
   };
@@ -412,3 +507,12 @@
   $('space-sound-toggle').addEventListener('click', toggleSound);
   $('space-sound-icon').textContent = state.sound ? '🔊' : '🔇'; $('space-sound-toggle').setAttribute('aria-pressed', String(state.sound)); $('settings-sound-icon').textContent = state.sound ? '🔊' : '🔇'; $('settings-sound').setAttribute('aria-pressed', String(state.sound)); document.body.classList.add('home-mode'); renderFlashcard(); updateHome();
 })();
+
+window.capNhatTaiKhoan = function (user) {
+    const tenTaiKhoan = document.getElementById("tenTaiKhoan");
+
+    if (!tenTaiKhoan) return;
+
+    tenTaiKhoan.textContent =
+        user.displayName || user.email || "Người chơi";
+};
